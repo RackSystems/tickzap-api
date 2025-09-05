@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  password  String
+  email     String    @unique
+  avatar    String?
+  isActive  Boolean   @default(false)
+  status    String    @default("offline")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Ticket    Ticket[]
+  Message   Message[]
+}
+
+model Channel {
+  id              String    @id @default(cuid())
+  name            String
+  type            String
+  identifier      String
+  status          String    @default("disconnected")
+  isAuthenticated String    @default("false")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  Contact         Contact[]
+  Ticket          Ticket[]
+}
+
+model Contact {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?   @unique
+  phone     String?   @unique
+  avatar    String?
+  birthDate DateTime?
+  document  String?   @unique
+  status    Boolean   @default(false)
+  remoteJid String?   @unique
+  channelId String?
+  channel   Channel?  @relation(fields: [channelId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Ticket    Ticket[]
+  Message   Message[]
+}
+
+enum TicketStatus {
+  PENDING
+  OPEN
+  CLOSED
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  contactId String
+  contact   Contact      @relation(fields: [contactId], references: [id])
+  channelId String
+  channel   Channel      @relation(fields: [channelId], references: [id])
+  status    TicketStatus
+  UserId    String?
+  user      User?        @relation(fields: [UserId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  messages  Message[]
+}
+
+enum MessageType {
+  USER
+  CLIENT
+  BOT
+}
+
+enum MessageStatus {
+  SEND
+  RECEIVED
+  READ
+  FAILED
+}
+
+enum MediaType {
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+}
+
+model Message {
+  id         String        @id // pegar do evolution, so retorna id pq enviou o recebu a msg. se nao eh erro nem salva
+  ticketId   String
+  ticket     Ticket        @relation(fields: [ticketId], references: [id])
+  userId     String?
+  user       User?         @relation(fields: [userId], references: [id])
+  contactId  String
+  contact    Contact       @relation(fields: [contactId], references: [id])
+  content    String
+  mediaUrl   String?
+  mediaType  MediaType?
+  type       MessageType
+  status     MessageStatus @default(SEND)
+  sentAt     DateTime?
+  receivedAt DateTime?
+  readAt     DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
