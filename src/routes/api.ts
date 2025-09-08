@@ -1,17 +1,18 @@
-import { Router } from 'express'
+import {Router} from 'express'
 import UserController from '../app/controllers/UserController'
 import AuthController from '../app/controllers/AuthController'
-import { authMiddleware } from '../app/middlewares/authMiddleware';
+import {authMiddleware} from '../app/middlewares/authMiddleware';
 import ChannelController from '../app/controllers/ChannelController';
 import ContactController from '../app/controllers/ContactController';
-import { handleValidation } from '../app/middlewares/handleValidationMiddleware';
+import * as EvolutionWebhook from "../app/integrations/evolution/Webhook";
+import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
   validateUserStore,
   validateUserUpdate,
   validateIdParam,
   validateUserStatus,
 } from '../app/validators/UserValidator';
-import { validateContactStore, validateContactUpdate, validateIdParam } from '../app/validators/ContactValidator';
+import {validateContactStore, validateContactUpdate, validateIdParam} from '../app/validators/ContactValidator';
 
 const router = Router()
 
@@ -46,5 +47,7 @@ router.put('/contacts/:id', authMiddleware, validateIdParam, validateContactUpda
 router.delete('/contacts/:id', authMiddleware, validateIdParam, handleValidation, ContactController.destroy)
 
 //Todo mensagens
+
+router.post('/webhook/evolution', EvolutionWebhook.handle);
 
 export default router
