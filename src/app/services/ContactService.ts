@@ -1,50 +1,45 @@
 import {Contact, Prisma} from '@prisma/client';
 import prisma from '../../config/database';
 
+type ContactQuery = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  status?: string;
+  page?: string;
+  pageSize?: string;
+};
+
 export default {
-  async store(data: Contact) {
+  async store(data: Contact): Promise<Contact> {
     data.status = true;
 
     return prisma.contact.create({data})
   },
 
-  async destroy(id: string) {
+  async destroy(id: string): Promise<Contact> {
     return prisma.contact.delete({
       where: {id}
     })
   },
 
-  async index(queryParams: {
-    name?: string;
-    phone?: string;
-    email?: string;
-    status?: string;
-    page?: string;
-    pageSize?: string;
-  }) {
-    const where: any = {};
+  async index(query: ContactQuery): Promise<Contact[]> {
+    const where: Prisma.ContactWhereInput = {};
 
-    if (queryParams.name) {
-      where.name = {contains: queryParams.name, mode: 'insensitive'};
+    if (query.name) {
+      where.name = {contains: query.name, mode: 'insensitive'};
     }
-    if (queryParams.phone) {
-      where.phone = {contains: queryParams.phone, mode: 'insensitive'};
+    if (query.phone) {
+      where.phone = {contains: query.phone, mode: 'insensitive'};
     }
-    if (queryParams.email) {
-      where.email = {contains: queryParams.email, mode: 'insensitive'};
+    if (query.email) {
+      where.email = {contains: query.email, mode: 'insensitive'};
     }
-    if (queryParams.status !== undefined) {
-      where.status = queryParams.status === 'true';
+    if (query.status !== undefined) {
+      where.status = query.status === 'true';
     }
 
-    const page = queryParams.page ? parseInt(queryParams.page) : 1;
-    const pageSize = queryParams.pageSize ? parseInt(queryParams.pageSize) : 10;
-
-    return prisma.contact.findMany({
-      where,
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    })
+    return prisma.contact.findMany({where});
   },
 
   async show(filter: Prisma.ContactWhereUniqueInput): Promise<Contact | null> {
@@ -53,7 +48,7 @@ export default {
     });
   },
 
-  async update(id: string, data: Contact) {
+  async update(id: string, data: Contact): Promise<Contact> {
     return prisma.contact.update({
       where: {id},
       data
