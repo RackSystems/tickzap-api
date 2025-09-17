@@ -39,12 +39,12 @@ router.post('/channels', authMiddleware, ChannelController.store)
 router.put('/channels/:id', authMiddleware, ChannelController.update)
 router.delete('/channels/:id', authMiddleware, ChannelController.destroy)
 
-// rotas de contatos
+// Contacts routes
 router.get('/contacts', authMiddleware, ContactController.index)
-router.get('/contacts/:id', authMiddleware, validateIdParam, handleValidation, ContactController.show)
+router.get('/contacts/:id', authMiddleware, ContactController.show)
 router.post('/contacts', authMiddleware, validateContactStore, handleValidation, ContactController.store)
-router.put('/contacts/:id', authMiddleware, validateIdParam, validateContactUpdate, handleValidation, ContactController.update)
-router.delete('/contacts/:id', authMiddleware, validateIdParam, handleValidation, ContactController.destroy)
+router.put('/contacts/:id', authMiddleware, validateContactUpdate, handleValidation, ContactController.update)
+router.delete('/contacts/:id', authMiddleware, ContactController.destroy)
 
 //Todo mensagens
 
