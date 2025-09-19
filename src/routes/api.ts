@@ -4,6 +4,7 @@ import AuthController from '../app/controllers/AuthController'
 import {authMiddleware} from '../app/middlewares/authMiddleware';
 import ChannelController from '../app/controllers/ChannelController';
 import ContactController from '../app/controllers/ContactController';
+import TicketController from '../app/controllers/TicketController';
 import WebhookController from '../app/controllers/WebhookController';
 import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
@@ -12,7 +13,8 @@ import {
   validateIdParam,
   validateUserStatus,
 } from '../app/validators/UserValidator';
-import {validateContactStore, validateContactUpdate, validateIdParam} from '../app/validators/ContactValidator';
+import {validateContactStore, validateContactUpdate} from '../app/validators/ContactValidator';
+import {validateTicketStore, validateTicketUpdate} from "../app/validators/TicketValidator";
 
 const router = Router()
 
@@ -46,7 +48,12 @@ router.post('/contacts', authMiddleware, validateContactStore, handleValidation,
 router.put('/contacts/:id', authMiddleware, validateContactUpdate, handleValidation, ContactController.update)
 router.delete('/contacts/:id', authMiddleware, ContactController.destroy)
 
-//Todo mensagens
+// Tickets routes
+router.get('/tickets', authMiddleware, TicketController.index)
+router.get('/tickets/:id', authMiddleware, handleValidation, TicketController.show)
+router.post('/tickets', authMiddleware, validateTicketStore, handleValidation, TicketController.store)
+router.put('/tickets/:id', authMiddleware, validateTicketUpdate, handleValidation, TicketController.update)
+router.delete('/tickets/:id', authMiddleware, handleValidation, TicketController.destroy)
 
 router.post('/webhook/evolution', WebhookController.evolutionHandle);
 
