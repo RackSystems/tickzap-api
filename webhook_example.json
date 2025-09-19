@@ -1,0 +1,45 @@
+{
+  "event": "messages.upsert",
+  "instance": "Teste ZAP",
+  "data": {
+    "key": {
+      "remoteJid": "5517996097839@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3A38A22A9680CE49C704",
+      "senderLid": "148202158350573@lid"
+    },
+    "pushName": "Juliany",
+    "status": "DELIVERY_ACK",
+    "message": {
+      "messageContextInfo": {
+        "deviceListMetadata": {
+          "senderKeyHash": "w0ZacxsiPhzTVw==",
+          "senderTimestamp": "1753310603",
+          "recipientKeyHash": "AENOrlDCXQIqAA==",
+          "recipientTimestamp": "1755989691"
+        },
+        "deviceListMetadataVersion": 2,
+        "messageSecret": "/5k3BTWndAYrJ0CBrNtJcnatWOe91Ec6PqEZldpz8aA="
+      },
+      "conversation": "Hello"
+    },
+    "contextInfo": {
+      "expiration": 7776000,
+      "ephemeralSettingTimestamp": "1755645243",
+      "disappearingMode": {
+        "initiator": "INITIATED_BY_ME",
+        "trigger": "ACCOUNT_SETTING",
+        "initiatedByMe": true
+      }
+    },
+    "messageType": "conversation",
+    "messageTimestamp": 1757208712,
+    "instanceId": "f49c530b-8bb0-47a6-b34c-76deb25459ae",
+    "source": "ios"
+  },
+  "destination": "https://webhook-test.com/3c68edb422d6c5fcf563d267f731336f",
+  "date_time": "2025-09-06T22:31:52.347Z",
+  "sender": "5518981089683@s.whatsapp.net",
+  "server_url": "http://localhost:8080",
+  "apikey": "C94835CC-A4C4-4A6B-8894-33DC859E9A34"
+}
