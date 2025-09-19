@@ -11,7 +11,7 @@ type ContactQuery = {
 };
 
 export default {
-  async store(data: Contact): Promise<Contact> {
+  async store(data: Prisma.ContactUncheckedCreateInput): Promise<Contact> {
     data.status = true;
 
     return prisma.contact.create({data})
