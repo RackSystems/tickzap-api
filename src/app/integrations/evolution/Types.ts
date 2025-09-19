@@ -8,3 +8,13 @@ interface WebhookPayload {
   server_url: string;
   apikey: string;
 }
+
+export interface EvolutionInstanceResponse {
+  instance: {
+    instanceName: string;
+    status: string;
+  };
+  hash: {
+    apikey: string;
+  };
+}

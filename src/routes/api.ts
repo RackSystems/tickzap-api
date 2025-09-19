@@ -4,7 +4,7 @@ import AuthController from '../app/controllers/AuthController'
 import {authMiddleware} from '../app/middlewares/authMiddleware';
 import ChannelController from '../app/controllers/ChannelController';
 import ContactController from '../app/controllers/ContactController';
-import * as EvolutionWebhook from "../app/integrations/evolution/Webhook";
+import WebhookController from '../app/controllers/WebhookController';
 import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
   validateUserStore,
@@ -48,6 +48,6 @@ router.delete('/contacts/:id', authMiddleware, ContactController.destroy)
 
 //Todo mensagens
 
-router.post('/webhook/evolution', EvolutionWebhook.handle);
+router.post('/webhook/evolution', WebhookController.evolutionHandle);
 
 export default router
