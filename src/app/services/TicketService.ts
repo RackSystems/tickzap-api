@@ -51,8 +51,8 @@ export default {
     });
   },
 
-  async show(filter: Prisma.TicketWhereUniqueInput): Promise<Ticket | null> {
-    return prisma.ticket.findUnique({
+  async show(filter: Prisma.TicketWhereInput): Promise<Ticket | null> {
+    return prisma.ticket.findFirst({
       where: filter,
       include: {
         contact: true,
