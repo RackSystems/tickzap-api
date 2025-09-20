@@ -48,7 +48,7 @@ export default {
     });
   },
 
-  async update(id: string, data: Contact): Promise<Contact> {
+  async update(id: string, data: Partial<Contact>): Promise<Contact> {
     return prisma.contact.update({
       where: {id},
       data
