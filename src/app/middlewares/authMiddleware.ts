@@ -1,12 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
+import {Request, Response, NextFunction} from 'express';
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const userId = req.cookies?.userId ?? null;
 
   if (!userId) {
-    return res.status(401).json({
+    res.status(401).json({
       message: "Oops! Você precisa estar autenticado para acessar este recurso.",
     });
+    return;
   }
 
   next();
