@@ -1,7 +1,9 @@
-import ChannelRepository from "../repositories/ChannelRepository";
+import {formatPhoneNumber} from "../../helpers/functions";
 import ContactService from "../services/ContactService";
 import {TicketStatus} from ".prisma/client";
 import TicketService from "./TicketService";
+import ChannelService from "./ChannelService";
+import ChannelRepository from "../repositories/ChannelRepository";
 
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
@@ -59,8 +61,42 @@ export default {
   },
 
   async handleContactsUpsert(payload: any): Promise<void> {
-    // Implementation for contact creation/updates
-    console.log('Contacts upsert event received but not yet implemented');
+    const {data: contactsData} = payload;
+
+    const contacts = Array.isArray(contactsData) ? contactsData : [contactsData];
+
+    if (contacts.length === 0) {
+      return;
+    }
+
+    const instanceId = contacts[0].instanceId;
+    const channel = await ChannelService.getById(instanceId);
+
+    if (!channel) {
+      return;
+    }
+
+    for (const contactData of contacts) {
+      if (!contactData.remoteJid) {
+        continue;
+      }
+
+      let contact = await ContactService.show({remoteJid: contactData.remoteJid});
+
+      if (contact) {
+        await ContactService.update(contact.id, {
+          avatar: contactData.profilePicUrl || contact.avatar,
+          name: contactData.pushName || contact.name,
+        });
+      } else {
+        await ContactService.store({
+          remoteJid: contactData.remoteJid,
+          avatar: contactData.profilePicUrl,
+          name: contactData.pushName || '',
+          phone: formatPhoneNumber(contactData.remoteJid),
+          channelId: channel.id,
+        });
+      }
+    }
   }
 }
-
