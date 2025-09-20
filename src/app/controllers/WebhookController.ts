@@ -27,12 +27,8 @@ export default {
           // await WebhookService.handleConnectionUpdate(payload);
           break;
         case 'contacts.update':
-          // To be implemented
-          // await WebhookService.handleContactsUpdate(payload);
-          break;
         case 'contacts.upsert':
-          // To be implemented
-          // await WebhookService.handleContactsUpsert(payload);
+          await WebhookService.handleContactsUpsert(payload);
           break;
         default:
           console.log(`Unhandled webhook event: ${payload.event}`);
