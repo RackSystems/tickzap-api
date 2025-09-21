@@ -10,7 +10,6 @@ import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
   validateUserStore,
   validateUserUpdate,
-  validateIdParam,
   validateUserStatus,
 } from '../app/validators/UserValidator';
 import {validateContactStore, validateContactUpdate} from '../app/validators/ContactValidator';
