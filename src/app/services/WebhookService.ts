@@ -1,12 +1,9 @@
 import {formatPhoneNumber} from "../../helpers/functions";
 import ContactService from "../services/ContactService";
-import {TicketStatus} from ".prisma/client";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
 import MessageService from "../services/MessageService";
-import {MessageType, TicketStatus, Ticket} from ".prisma/client";
-import TicketService from "./TicketService";
-import prisma from "../../config/database";
+import {MessageType, TicketStatus} from ".prisma/client";
 
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
