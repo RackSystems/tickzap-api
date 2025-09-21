@@ -25,12 +25,12 @@ router.get('/me', authMiddleware, AuthController.me)
 
 // rotas de usuários
 router.get('/users', authMiddleware, UserController.index)
-router.get('/users/:id', authMiddleware, validateIdParam, handleValidation, UserController.show)
+router.get('/users/:id', authMiddleware, UserController.show)
 router.post('/users', validateUserStore, handleValidation, UserController.store)
-router.put('/users/:id', authMiddleware, validateIdParam, validateUserUpdate, handleValidation, UserController.update)
-router.delete('/users/:id', authMiddleware, validateIdParam, handleValidation, UserController.destroy)
-router.patch('/users/:id/activate', authMiddleware, validateIdParam, handleValidation, UserController.enableOrDisable)
-router.patch('/users/:id/status', authMiddleware, validateIdParam, validateUserStatus, handleValidation, UserController.changeStatus)
+router.put('/users/:id', authMiddleware, validateUserUpdate, handleValidation, UserController.update)
+router.delete('/users/:id', authMiddleware, UserController.destroy)
+router.patch('/users/:id/activate', authMiddleware, UserController.enableOrDisable)
+router.patch('/users/:id/status', authMiddleware, validateUserStatus, handleValidation, UserController.changeStatus)
 
 // rotas de canais
 router.get('/channels', authMiddleware, ChannelController.index)

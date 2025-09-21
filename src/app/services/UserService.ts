@@ -1,56 +1,101 @@
-import UserRepository from '../repositories/UserRepository'
-import { User } from '../interfaces/UserInterface'
-import bcrypt from 'bcrypt'
-import { UserStatus } from "../enums/UserStatusEnum";
-import { isValidUserStatus } from "../../helpers/UserHelper"
+import {Prisma, User} from '@prisma/client';
+import prisma from '../../config/database';
+import bcrypt from 'bcrypt';
+import {UserStatus} from "../enums/UserStatusEnum";
+import {isValidUserStatus} from "../../helpers/UserHelper";
+
+type UserQuery = {
+  name?: string;
+  email?: string;
+  status?: string;
+  isActive?: string;
+  page?: string;
+  pageSize?: string;
+};
 
 export default {
-  //TODO criar um helper para nao trazer o password nas responses
+  async index(queryParams: UserQuery): Promise<User[]> {
+    const where: Prisma.UserWhereInput = {};
 
-  async create(data: User) {
-    if (!data.password) {
-      throw new Error('Senha é obrigatória');
+    if (queryParams.name) {
+      where.name = {contains: queryParams.name, mode: 'insensitive'};
+    }
+    if (queryParams.email) {
+      where.email = {contains: queryParams.email, mode: 'insensitive'};
+    }
+    if (queryParams.status) {
+      where.status = queryParams.status;
+    }
+    if (queryParams.isActive !== undefined) {
+      where.isActive = queryParams.isActive === 'true';
     }
 
+    const page = queryParams.page ? parseInt(queryParams.page) : 1;
+    const pageSize = queryParams.pageSize ? parseInt(queryParams.pageSize) : 10;
+
+    const users = await prisma.user.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    return users;
+  },
+
+  async show(id: string): Promise<User | null> {
+    return prisma.user.findUnique({
+      where: {id},
+    });
+  },
+
+  async store(data: Prisma.UserCreateInput): Promise<User> {
     data.password = await bcrypt.hash(data.password, 12);
-    return await UserRepository.create(data);
+    return prisma.user.create({data});
   },
 
-  async delete(id: string) {
+  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    return prisma.user.update({
+      where: {id},
+      data,
+    });
+  },
+
+  async destroy(id: string): Promise<User> {
     //TODO - apagar apenas usuarios inativos
-    return await UserRepository.delete(id);
+    return prisma.user.delete({
+      where: {id},
+    });
   },
 
-  async getAll(queryParams: any) {
-    return UserRepository.findAll(queryParams);
-  },
-
-  async getById(id: string) {
-    return await UserRepository.getById(id);
-  },
-
-  async update(id: string, data: Partial<Omit<User, 'password'>>) {
-    return await UserRepository.update(id, data);
-  },
-
-  async changeStatus(id: string, status: string) {
-    let user = await UserRepository.getById(id);
+  async changeStatus(id: string, status: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({where: {id}});
     if (!user) {
-      return;
+      return null;
     }
-    user.status = isValidUserStatus(status) ? status : UserStatus.OFFLINE;
-    let { password: _, ...safeUser } = user;
-    return this.update(id, safeUser);
+
+    const newStatus = isValidUserStatus(status) ? status : UserStatus.OFFLINE;
+
+    return prisma.user.update({
+      where: {id},
+      data: {status: newStatus},
+    });
   },
 
-  async enableOrDisable(id: string) {
-    let user = await UserRepository.getById(id);
+  async enableOrDisable(id: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({where: {id}});
     if (!user) {
-      return;
+      return null;
     }
-    user.isActive = !user.isActive;
-    user.status = user.isActive ? user.status : UserStatus.OFFLINE;
-    let { password: _, ...safeUser } = user;
-    return this.update(id, safeUser);
+
+    const newIsActive = !user.isActive;
+    const newStatus = newIsActive ? user.status : UserStatus.OFFLINE;
+
+    return prisma.user.update({
+      where: {id},
+      data: {
+        isActive: newIsActive,
+        status: newStatus
+      },
+    });
   },
-}
+};
