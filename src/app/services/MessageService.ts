@@ -10,13 +10,6 @@ type MessageQuery = {
   status?: string;
 };
 
-enum MessageStatus {
-  SEND = 'SEND',
-  RECEIVED = 'RECEIVED',
-  READ = 'READ',
-  FAILED = 'FAILED'
-}
-
 type TicketMessage = {
   contactId: String;
   channelId: String;
@@ -24,11 +17,30 @@ type TicketMessage = {
   userId?: String;
 };
 
+type MediaMessage = {
+  mediaType: MediaType;
+  mediaUrl: String;
+};
+
+enum MessageStatus {
+  SEND = 'SEND',
+  RECEIVED = 'RECEIVED',
+  READ = 'READ',
+  FAILED = 'FAILED'
+}
+
+enum MediaType {
+  IMAGE = 'IMAGE',
+  AUDIO = 'AUDIO',
+  VIDEO = 'VIDEO',
+  DOCUMENT = 'DOCUMENT',
+}
+
 /**
-* ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,
-* ao enviar a mensagem, vamos criar o ticket aqui e salvar no banco,
-*
-**/
+ * ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,
+ * ao enviar a mensagem, vamos criar o ticket aqui e salvar no banco,
+ *
+ **/
 export default {
   async store(data: Message): Promise<Message> {
     if (data.ticketId) {
@@ -47,6 +59,11 @@ export default {
 
       data.ticketId = createdTicket.id;
       data.status = MessageStatus.SEND;
+    }
+
+    if (data.mediaType) {
+      //todo save url
+      this.processMidea(data.mediaType, data.mediaUrl)
     }
 
     return prisma.message.create({data})
@@ -82,4 +99,37 @@ export default {
     });
   },
 
+  processMidea: function (mediaType: string, mediaUrl: string): MediaMessage {
+    let mediaMessage: MediaMessage;
+    switch (mediaType) {
+      case MediaType.IMAGE:
+        mediaMessage = {
+          mediaType: MediaType.IMAGE,
+          mediaUrl: '' //todo base 64 image
+        };
+        break;
+      case MediaType.AUDIO:
+        mediaMessage = {
+          mediaType: MediaType.AUDIO,
+          mediaUrl,
+        };
+        break;
+
+      case MediaType.VIDEO:
+        mediaMessage = {
+          mediaType: MediaType.VIDEO,
+          mediaUrl,
+        };
+        break;
+
+      case MediaType.DOCUMENT:
+        mediaMessage = {
+          mediaType: MediaType.DOCUMENT,
+          mediaUrl,
+        };
+        break;
+
+    }
+    return mediaMessage;
+  },
 }
