@@ -1,48 +1,74 @@
-import {Channel} from '@prisma/client';
-import ChannelRepository from '../repositories/ChannelRepository';
+import {Channel, Prisma} from '@prisma/client';
 import Instance from '../integrations/evolution/Instance';
+import prisma from '../../config/database';
+
+type IndexQueryParams = {
+  type?: string;
+  status?: string;
+  isAuthenticated?: string;
+  page?: string;
+  pageSize?: string;
+}
 
 export default {
-  async store(data: Omit<Channel, 'id' | 'createdAt' | 'updatedAt'>): Promise<Channel> {
-
+  async store(data: Channel): Promise<Channel> {
     const payload = {
       'instanceName': data.name,
       'integration': 'WHATSAPP-BAILEYS'
     }
 
-    const evolutionResponse = await Instance.create(payload)
+    const evolutionResponse: any = await Instance.create(payload)
 
     if (!evolutionResponse || !evolutionResponse.instance.status || !evolutionResponse.hash) {
       throw new Error('Failed to create channel in Evolution');
     }
 
-    console.log(evolutionResponse)
-
-    return await ChannelRepository.create({
+    const channelData = {
       ...data,
       status: evolutionResponse.instance.status,
       identifier: evolutionResponse.hash
-    });
+    }
+
+    return prisma.channel.create({data: channelData});
   },
 
   async destroy(id: string): Promise<Channel> {
-    return await ChannelRepository.delete(id);
+    return prisma.channel.delete({
+      where: {id}
+    });
   },
 
-  async index(queryParams: any): Promise<Channel[]> {
-    return ChannelRepository.findAll(queryParams);
+  async index(queryParams: IndexQueryParams): Promise<Channel[]> {
+    const where: Prisma.ChannelWhereInput = {};
+
+    if (queryParams.type) {
+      where.name = {contains: queryParams.type, mode: 'insensitive'};
+    }
+
+    if (queryParams.status) {
+      where.status = {contains: queryParams.status, mode: 'insensitive'};
+    }
+
+    return prisma.channel.findMany({
+      where
+    });
   },
 
-  async show(id: string): Promise<Channel> {
-    return await ChannelRepository.getById(id);
+  async show(filter: Prisma.ChannelWhereUniqueInput): Promise<Channel | null> {
+    return prisma.channel.findUnique({
+      where: filter
+    });
   },
 
   async update(id: string, data: Partial<Channel>): Promise<Channel> {
-    return await ChannelRepository.update(id, data);
+    return prisma.channel.update({
+      where: {id},
+      data
+    });
   },
 
   async connect(instanceId: string): Promise<any> {
-    const channel = await ChannelRepository.getById(instanceId);
+    const channel = await this.show({id: instanceId});
 
     if (!channel) {
       throw new Error('Channel not found');
@@ -58,7 +84,7 @@ export default {
   },
 
   async getStatus(instanceId: string): Promise<any> {
-    const channel = await ChannelRepository.getById(instanceId);
+    const channel = await this.show({id: instanceId});
 
     if (!channel) {
       throw new Error('Channel not found');
