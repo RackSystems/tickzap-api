@@ -9,7 +9,7 @@ export default {
 
   async show(req: Request, res: Response): Promise<void> {
     const {id} = req.params;
-    const user = await UserService.show(id);
+    const user = await UserService.show({id});
     res.json(user);
   },
 
