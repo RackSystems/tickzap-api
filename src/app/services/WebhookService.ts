@@ -3,7 +3,6 @@ import ContactService from "../services/ContactService";
 import {TicketStatus} from ".prisma/client";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
-import ChannelRepository from "../repositories/ChannelRepository";
 
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
@@ -14,7 +13,10 @@ export default {
         return;
       }
 
-      const channel = await ChannelRepository.getById(instanceId);
+      const channel = await ChannelService.show({id: instanceId});
+      if (!channel) {
+        console.error(`Channel not found for instanceId: ${instanceId}`);
+      }
       if (!channel) {
         console.error(`Channel not found for instanceId: ${instanceId}`);
         return;
@@ -70,7 +72,7 @@ export default {
     }
 
     const instanceId = contacts[0].instanceId;
-    const channel = await ChannelService.getById(instanceId);
+    const channel = await ChannelService.show({id: instanceId});
 
     if (!channel) {
       return;
