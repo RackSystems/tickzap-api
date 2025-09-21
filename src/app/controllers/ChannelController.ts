@@ -9,7 +9,7 @@ export default {
 
   async show(req: Request, res: Response): Promise<void> {
     const {id} = req.params;
-    const response = await ChannelService.show(id)
+    const response = await ChannelService.show({id})
     res.json(response)
   },
 
