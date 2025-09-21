@@ -42,9 +42,9 @@ export default {
     return users;
   },
 
-  async show(id: string): Promise<User | null> {
+  async show(filter: Prisma.UserWhereUniqueInput): Promise<User | null> {
     return prisma.user.findUnique({
-      where: {id},
+      where: filter,
     });
   },
 

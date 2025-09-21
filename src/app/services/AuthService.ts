@@ -1,9 +1,9 @@
-import UserRepository from '../repositories/UserRepository';
 import bcrypt from 'bcrypt';
+import userService from "./UserService";
 
 export default {
-  authenticate: async function(email: string, password: string): Promise<null|string> {
-    const user = await UserRepository.findByEmail(email);
+  authenticate: async function (email: string, password: string): Promise<null | string> {
+    const user = await userService.show({email});
     if (!user) {
       return null;
     }
@@ -17,7 +17,7 @@ export default {
   },
 
   async me(userId: string): Promise<Object> {
-    const user = await UserRepository.getById(userId)
+    const user = await userService.show({id: userId});
 
     if (!user) {
       throw new Error('Usuário não encontrado')
