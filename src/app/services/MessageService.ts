@@ -1,4 +1,4 @@
-import {Message, Prisma} from '@prisma/client';
+import {Message, Ticket, TicketStatus, Prisma} from '@prisma/client';
 import prisma from '../../config/database';
 
 type MessageQuery = {
@@ -14,12 +14,40 @@ enum MessageStatus {
   SEND = 'SEND',
   RECEIVED = 'RECEIVED',
   READ = 'READ',
-  FAILED = 'EFAILED'
+  FAILED = 'FAILED'
 }
 
+type TicketMessage = {
+  contactId: String;
+  channelId: String;
+  status: TicketStatus.PENDING;
+  userId?: String;
+};
+
+/**
+* ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,
+* ao enviar a mensagem, vamos criar o ticket aqui e salvar no banco,
+*
+**/
 export default {
   async store(data: Message): Promise<Message> {
-    data.status = data.status ?? MessageStatus.RECEIVED;
+    if (data.ticketId) {
+      data.status = MessageStatus.RECEIVED;
+    }
+
+    if (!data.ticketId) {
+      const createdTicket = await prisma.ticket.create({
+        data: {
+          contactId: data.contactId,
+          channelId: data.channelId,
+          status: TicketStatus.PENDING,
+          userId: data.userId,
+        } satisfies TicketMessage
+      });
+
+      data.ticketId = createdTicket.id;
+      data.status = MessageStatus.SEND;
+    }
 
     return prisma.message.create({data})
   },

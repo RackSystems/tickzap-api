@@ -3,6 +3,10 @@ import ContactService from "../services/ContactService";
 import {TicketStatus} from ".prisma/client";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
+import MessageService from "../services/MessageService";
+import {MessageType, TicketStatus, Ticket} from ".prisma/client";
+import TicketService from "./TicketService";
+import prisma from "../../config/database";
 
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
@@ -39,7 +43,25 @@ export default {
       });
 
       // Create message
-      console.log(message)
+      try {
+        // Extract message content from different possible message types
+        const content = message.conversation ||
+          (message.extendedTextMessage && message.extendedTextMessage.text) ||
+          "";
+
+        await MessageService.store({
+          id: key.id,
+          ticketId: ticket.id,
+          contactId: contact.id,
+          content: content,
+          type: MessageType.CLIENT,
+          sentAt: new Date(data.messageTimestamp * 1000),
+        });
+        console.log(`Message created successfully: ${key.id}`);
+      } catch (error) {
+        console.error(`Error creating message: ${error}`);
+        throw error;
+      }
     } catch (error) {
       console.error('Error in handleMessagesUpsert:', error);
       throw error;
