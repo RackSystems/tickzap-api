@@ -1,9 +1,9 @@
-import { Channel } from '@prisma/client';
+import {Channel} from '@prisma/client';
 import ChannelRepository from '../repositories/ChannelRepository';
 import Instance from '../integrations/evolution/Instance';
 
 export default {
-  async create(data: Omit<Channel, 'id' | 'createdAt' | 'updatedAt'>): Promise<Channel> {
+  async store(data: Omit<Channel, 'id' | 'createdAt' | 'updatedAt'>): Promise<Channel> {
 
     const payload = {
       'instanceName': data.name,
@@ -25,15 +25,15 @@ export default {
     });
   },
 
-  async delete(id: string): Promise<Channel> {
+  async destroy(id: string): Promise<Channel> {
     return await ChannelRepository.delete(id);
   },
 
-  async getAll(queryParams: any): Promise <Channel[]> {
+  async index(queryParams: any): Promise<Channel[]> {
     return ChannelRepository.findAll(queryParams);
   },
 
-  async getById(id: string): Promise<Channel> {
+  async show(id: string): Promise<Channel> {
     return await ChannelRepository.getById(id);
   },
 
