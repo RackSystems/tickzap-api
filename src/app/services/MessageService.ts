@@ -62,7 +62,7 @@ export default {
     }
 
     if (data.mediaType) {
-      //todo save url
+      //save path - object key on mediaUrl
       this.processMidea(data.mediaType, data.mediaUrl)
     }
 
@@ -105,7 +105,7 @@ export default {
       case MediaType.IMAGE:
         mediaMessage = {
           mediaType: MediaType.IMAGE,
-          mediaUrl: '' //todo base 64 image
+          mediaUrl: mediaUrl,
         };
         break;
       case MediaType.AUDIO:
@@ -129,6 +129,8 @@ export default {
         };
         break;
 
+      default:
+        throw new Error(`Tipo de mídia não suportado: ${mediaType}`);
     }
     return mediaMessage;
   },
