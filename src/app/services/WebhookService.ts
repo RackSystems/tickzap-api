@@ -8,16 +8,13 @@ import {MessageType, TicketStatus} from ".prisma/client";
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
     try {
-      const {key, pushName, message, messageType, instanceId} = payload.data;
+      const {key, pushName, message, messageType, instanceId, messageTimestamp} = payload.data;
 
       if (key.fromMe) {
         return;
       }
 
       const channel = await ChannelService.show({id: instanceId});
-      if (!channel) {
-        console.error(`Channel not found for instanceId: ${instanceId}`);
-      }
       if (!channel) {
         console.error(`Channel not found for instanceId: ${instanceId}`);
         return;
@@ -39,26 +36,19 @@ export default {
         status: TicketStatus.PENDING,
       });
 
-      // Create message
-      try {
-        // Extract message content from different possible message types
-        const content = message.conversation ||
-          (message.extendedTextMessage && message.extendedTextMessage.text) ||
-          "";
+      const content = message.conversation
+        || (message.extendedTextMessage && message.extendedTextMessage.text)
+        || "";
 
-        await MessageService.store({
-          id: key.id,
-          ticketId: ticket.id,
-          contactId: contact.id,
-          content: content,
-          type: MessageType.CLIENT,
-          sentAt: new Date(data.messageTimestamp * 1000),
-        });
-        console.log(`Message created successfully: ${key.id}`);
-      } catch (error) {
-        console.error(`Error creating message: ${error}`);
-        throw error;
-      }
+      await MessageService.store({
+        id: key.id,
+        ticketId: ticket.id,
+        contactId: contact.id,
+        content: content,
+        type: MessageType.CLIENT,
+        sentAt: new Date(messageTimestamp * 1000),
+      });
+      console.log(`Message created successfully: ${key.id}`);
     } catch (error) {
       console.error('Error in handleMessagesUpsert:', error);
       throw error;
