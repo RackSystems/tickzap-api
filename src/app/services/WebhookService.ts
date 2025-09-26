@@ -3,7 +3,9 @@ import ContactService from "../services/ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
 import MessageService from "../services/MessageService";
-import {MessageType, TicketStatus} from ".prisma/client";
+import {MediaType, MessageType, TicketStatus} from ".prisma/client";
+import Message from "../integrations/evolution/Message";
+import StorageService from "./StorageService";
 
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
@@ -36,18 +38,84 @@ export default {
         status: TicketStatus.PENDING,
       });
 
-      const content = message.conversation
-        || (message.extendedTextMessage && message.extendedTextMessage.text)
-        || "";
+      const validMediaTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'];
+
+      let content = "";
+      let mediaUrl: string | null = null;
+      let mediaType: MediaType | null = null;
+
+      if (validMediaTypes.includes(messageType)) {
+
+        console.log(payload.data.key.id);
+
+        const payloadForApi = {
+          message: {
+            key: {
+              id: payload.data.key.id,
+            },
+          },
+          convertToMp4: false
+        };
+
+        console.log(payloadForApi);
+
+        // Definimos o tipo de retorno esperado, agora com mais detalhes
+        // type MediaResponse = { base64: string; fileName: string; mimetype: string; };
+
+        const response = await Message.convertMedia(
+          payload.instance,
+          payloadForApi
+        );
+
+        console.log('Response from convertMedia:');
+        console.log(response);
+
+        const base64Data = response.base64;
+        if (typeof base64Data !== 'string') {
+          throw new Error('Não foi possível obter os dados em base64 da resposta da mídia.');
+        }
+        const fileBuffer = Buffer.from(base64Data, 'base64');
+
+        // LÓGICA SIMPLIFICADA: Usando os dados diretos da resposta da API
+        // @ts-ignore
+        const fileName = response.fileName;
+        // @ts-ignore
+        const mime = response.mimetype;
+
+        const fileKey = `tickets/${ticket.id}/${fileName}`;
+
+        mediaUrl = await StorageService.upload({
+          buffer: fileBuffer,
+          key: fileKey,
+          mimeType: mime,
+        });
+
+        console.log(`Media uploaded successfully: ${fileKey}`);
+        console.log(`Media URL: ${mediaUrl}`);
+
+        // content = messageDetails[messageType]?.caption || "";
+
+        // const prismaMediaType = messageType.replace('Message', '').toUpperCase();
+        // if (Object.keys(MediaType).includes(prismaMediaType)) {
+        //   mediaType = prismaMediaType as MediaType;
+        // }
+      } else {
+        content = message.conversation
+          || (message.extendedTextMessage && message.extendedTextMessage.text)
+          || "";
+      }
 
       await MessageService.store({
         id: key.id,
         ticketId: ticket.id,
         contactId: contact.id,
         content: content,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
         type: MessageType.CLIENT,
         sentAt: new Date(messageTimestamp * 1000),
       });
+
       console.log(`Message created successfully: ${key.id}`);
     } catch (error) {
       console.error('Error in handleMessagesUpsert:', error);

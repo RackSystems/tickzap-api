@@ -56,4 +56,38 @@ router.delete('/tickets/:id', authMiddleware, handleValidation, TicketController
 
 router.post('/webhook/evolution', WebhookController.evolutionHandle);
 
+// Rota de teste para upload de arquivos
+import multer from 'multer';
+import StorageService from '../app/services/StorageService';
+
+// Configura o multer para usar armazenamento em memória (o arquivo fica em um buffer)
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/test-upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo foi enviado.' });
+    }
+
+    const { buffer, mimetype, originalname } = req.file;
+    // Cria um nome de arquivo único para evitar sobreposições
+    const fileKey = `test-uploads/${Date.now()}-${originalname}`;
+
+    const resultKey = await StorageService.upload({
+      buffer,
+      key: fileKey,
+      mimeType: mimetype,
+    });
+
+    return res.status(200).json({
+      message: 'Arquivo enviado com sucesso!',
+      key: resultKey,
+    });
+
+  } catch (error: any) {
+    console.error('Falha no upload de teste:', error);
+    return res.status(500).json({ error: 'Falha no upload.', details: error.message });
+  }
+});
+
 export default router
