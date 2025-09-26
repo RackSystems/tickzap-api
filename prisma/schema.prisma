@@ -97,7 +97,7 @@ enum MediaType {
 }
 
 model Message {
-  id         String        @id // pegar do evolution, so retorna id pq enviou o recebu a msg. se nao eh erro nem salva
+  id         String        @id // pegar do evolution, so retorna id pq enviou ou recebu a msg. se nao eh erro nem salva
   ticketId   String
   ticket     Ticket        @relation(fields: [ticketId], references: [id])
   userId     String?

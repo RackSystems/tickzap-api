@@ -17,6 +17,15 @@ interface MediaPayload {
   number: string;
 }
 
+interface ConvertMediaPayload {
+  message: {
+    key: {
+      id: string,
+    }
+  }
+  convertToMp4: boolean
+}
+
 const mimeTypes: Record<string, 'document' | 'image' | 'audio' | 'video'> = {
   pdf: 'document',
   jpg: 'image',
@@ -29,16 +38,16 @@ const mimeTypes: Record<string, 'document' | 'image' | 'audio' | 'video'> = {
 
 export default {
   async sendText(instance: string, payload: TextPayload) {
-    const { data } = await client.post(`/message/sendText/${instance}`, { payload })
+    const {data} = await client.post(`/message/sendText/${instance}`, {payload})
     return data
   },
 
   async sendAudio(instance: string, payload: AudioPayload) {
-    const { data } = await client.post(`/message/sendWhatsAppAudio/${instance}`, { payload })
+    const {data} = await client.post(`/message/sendWhatsAppAudio/${instance}`, {payload})
     return data
   },
 
-  async sendMedia(instance: string, payload: MediaPayload){
+  async sendMedia(instance: string, payload: MediaPayload) {
     const type = mimeTypes[payload.mediaType]
 
     const payload2 = {
@@ -48,17 +57,30 @@ export default {
       media: payload.media,
     }
 
-    const { data } = await client.post(`/message/sendMedia/${instance}`, { payload2 })
+    const {data} = await client.post(`/message/sendMedia/${instance}`, {payload2})
     return data
   },
 
   async sendSticker(instance: string, payload: AudioPayload) {
-    const { data } = await client.post(`/message/sendSticker/${instance}`, { payload })
+    const {data} = await client.post(`/message/sendSticker/${instance}`, {payload})
     return data
   },
 
   async markMessageAsRead(instance: string, payload: Object) {
-    const { data } = await client.post(`/message/markMessageAsRead/${instance}`, { payload })
+    const {data} = await client.post(`/message/markMessageAsRead/${instance}`, {payload})
     return data
-  }
+  },
+
+  /*
+    In this endpoint it is possible to extract the Base64 of the media
+    received in the messages, passing the message ID as a parameter.
+    Make sure that the received message is stored in MongoDB or in a file,
+    otherwise the error 400 - Bad Request will be displayed.
+    If the media type is audio, the mimetype audio/ogg is returned by default.
+    If you need an MP4 file, check the "convertToMp4" option as "true"
+  */
+  async convertMedia(instance: string, payload: ConvertMediaPayload) {
+    const {data} = await client.post(`/chat/getBase64FromMediaMessage/${instance}`, payload)
+    return data
+  },
 }
