@@ -6,6 +6,7 @@ import ChannelController from '../app/controllers/ChannelController';
 import ContactController from '../app/controllers/ContactController';
 import TicketController from '../app/controllers/TicketController';
 import WebhookController from '../app/controllers/WebhookController';
+import MessageController from "../app/controllers/MessageController";
 import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
   validateUserStore,
@@ -54,6 +55,12 @@ router.post('/tickets', authMiddleware, validateTicketStore, handleValidation, T
 router.put('/tickets/:id', authMiddleware, validateTicketUpdate, handleValidation, TicketController.update)
 router.delete('/tickets/:id', authMiddleware, handleValidation, TicketController.destroy)
 
+// Tickets Mensagens
+router.get('/tickets/:id/messages', authMiddleware, MessageController.index)
+// router.get('/tickets/:id/messages/:messageId', authMiddleware, handleValidation, MessageController.show)
+router.post('/tickets/messages', authMiddleware, MessageController.store)
+
+// Webhooks
 router.post('/webhook/evolution', WebhookController.evolutionHandle);
 
 // Rota de teste para upload de arquivos

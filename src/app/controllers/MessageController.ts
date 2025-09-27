@@ -1,8 +1,16 @@
+import {Request, Response} from 'express'
 import MessageService from "../services/MessageService";
 
 export default {
   async index(req: Request, res: Response) {
-    const message = await MessageService.index(req.query)
+    const ticketId = req.params.id as string | undefined;
+
+    if (!ticketId) {
+      res.status(400).json({error: 'ticketId is required in route params'});
+      return;
+    }
+
+    const message = await MessageService.index(ticketId)
     res.json(message)
   },
 
