@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from 'express';
-import HttpException from '../exceptions/HttpExcetion';
+import HttpException from '../exceptions/HttpException';
 import {Prisma} from '@prisma/client';
 
 const PRISMA_TO_HTTP: Record<string, number> = {
