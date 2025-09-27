@@ -3,6 +3,7 @@ import prisma from '../../config/database';
 import bcrypt from 'bcrypt';
 import {UserStatus} from "../enums/UserStatusEnum";
 import {isValidUserStatus} from "../../helpers/UserHelper";
+import HttpException from "../exceptions/HttpException";
 
 type UserQuery = {
   name?: string;
@@ -61,7 +62,11 @@ export default {
   },
 
   async destroy(id: string): Promise<User> {
-    //TODO - apagar apenas usuarios inativos
+    const user = await prisma.user.findUnique({where: {id}});
+    if (user.isActive) {
+      throw new HttpException('Usuário ativo, desative antes de excluir', 400);
+    }
+
     return prisma.user.delete({
       where: {id},
     });
@@ -70,7 +75,7 @@ export default {
   async changeStatus(id: string, status: string): Promise<User | null> {
     const user = await prisma.user.findUnique({where: {id}});
     if (!user) {
-      return null;
+      throw new HttpException('Usuário não encontrado', 404);
     }
 
     const newStatus = isValidUserStatus(status) ? status : UserStatus.OFFLINE;
@@ -84,7 +89,7 @@ export default {
   async enableOrDisable(id: string): Promise<User | null> {
     const user = await prisma.user.findUnique({where: {id}});
     if (!user) {
-      return null;
+      throw new HttpException('Usuário não encontrado', 404);
     }
 
     const newIsActive = !user.isActive;
