@@ -25,7 +25,8 @@ export default {
     })
   },
 
-  async index(query: TicketQuery): Promise<Ticket[]> {
+  //todo fix tipagem
+  async index(query: TicketQuery): Promise<any[]> {
     const where: Prisma.TicketWhereInput = {};
 
     if (query.contactId) {
@@ -41,13 +42,23 @@ export default {
       where.UserId = query.UserId;
     }
 
-    return prisma.ticket.findMany({
+    const tickets = await prisma.ticket.findMany({
       where,
       include: {
         contact: true,
         channel: true,
-        user: true
+        user: true,
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { content: true, createdAt: true, mediaType: true }
+        }
       }
+    });
+
+    return (tickets).map((ticket) => {
+      const {messages, ...rest} = ticket || {};
+      return {...rest, lastMessage: messages[0] || null};
     });
   },
 
