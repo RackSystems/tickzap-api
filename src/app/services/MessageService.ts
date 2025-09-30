@@ -1,4 +1,8 @@
-import {Message, TicketStatus, Prisma} from '@prisma/client';
+import {Message, Ticket, TicketStatus, Prisma} from '@prisma/client';
+import message from '..//integrations/evolution/Message';
+import {MediaPayload} from '../interfaces/MediaPayload'
+import {AudioPayload} from '../interfaces/AudioPayload'
+import {TextPayload} from '../interfaces/TextPayload'
 import prisma from '../../config/database';
 import StorageService from "./StorageService";
 
@@ -28,6 +32,12 @@ enum MediaType {
   DOCUMENT = 'DOCUMENT',
 }
 
+enum MessageType {
+  USER = 'USER',
+  CLIENT = 'CLIENT',
+  BOT =  'BOT'
+}
+
 /**
  * ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,
  * ao enviar a mensagem, vamos criar o ticket aqui e salvar no banco,
@@ -55,7 +65,8 @@ export default {
 
     if (data.mediaType) {
       //save path - object key on mediaUrl
-      this.processMidea(data.mediaType, data.mediaUrl)
+      const mediaMessage = this.processMidea(data.mediaType, data.mediaUrl);
+      data = { ...data, ...mediaMessage };
     }
 
     return prisma.message.create({data})
@@ -101,21 +112,21 @@ export default {
       case MediaType.AUDIO:
         mediaMessage = {
           mediaType: MediaType.AUDIO,
-          mediaUrl,
+          mediaUrl: mediaUrl,
         };
         break;
 
       case MediaType.VIDEO:
         mediaMessage = {
           mediaType: MediaType.VIDEO,
-          mediaUrl,
+          mediaUrl: mediaUrl,
         };
         break;
 
       case MediaType.DOCUMENT:
         mediaMessage = {
           mediaType: MediaType.DOCUMENT,
-          mediaUrl,
+          mediaUrl: mediaUrl,
         };
         break;
 
@@ -124,4 +135,82 @@ export default {
     }
     return mediaMessage;
   },
+
+  //para usar essa funçao, vai precisar usar a store antes, pois ela valida o payload e cria a mensagem que sera enviada
+  async sendMessage(data: Message) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: data.ticketId }
+    });
+
+    if (!ticket) {
+      throw new Error('Esse ticket não foi encontrado');
+    }
+
+    if (ticket.status !== TicketStatus.PENDING) {
+      return;
+    }
+
+    const contact =  await prisma.contact.findUnique({
+      where: { id: data.contactId }
+    });
+
+    const instance = ticket.channelId;
+
+    //tenta enviar, se enviado atualiza dados da mensagem
+    try {
+      //media message
+      if (data.mediaType) {
+        let media: MediaPayload;
+        media = {
+          media: data.mediaUrl,
+          type: data.mediaType,
+          mediaType: data.mediaType,
+          number: contact?.phone,
+        };
+        await message.sendMedia(instance, media);
+      }
+
+      //todo send text message
+      else if (data.content) {
+        let text: TextPayload;
+        text = {
+          text: data.content,
+          number: contact?.phone,
+        };
+        await message.sendText(instance, text);
+      }
+
+      //todo send audio message
+      else {
+        let audio: AudioPayload;
+        //front end grava o audio, envia para o minio, e o minio retorna o url do audio
+        audio = {
+          audio: data.mediaUrl,
+          number: contact?.phone,
+        };
+        await message.sendAudio(instance, audio);
+      }
+
+      //atualizar mensagem
+      await prisma.message.update({
+        where: { id: data.id },
+        data: {
+          type: MessageType.USER,
+          status: MessageStatus.SEND,
+          sentAt: new Date(),
+        }
+      });
+
+      // MessageType.USER
+    } catch (error) {
+      await prisma.message.update({
+        where: { id: data.id },
+        data: {
+          type: MessageType.USER,
+          status: MessageStatus.FAILED,
+        }
+      });
+      throw new Error('Falha ao enviar mensagem');
+    }
+  }
 }
