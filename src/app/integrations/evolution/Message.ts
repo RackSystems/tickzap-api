@@ -42,11 +42,13 @@ export default {
     return data
   },
 
+  //docs audioMessage - https://doc.evolution-api.com/v1/api-reference/message-controller/send-audio
   async sendAudio(instance: string, payload: AudioPayload) {
     const {data} = await client.post(`/message/sendWhatsAppAudio/${instance}`, {payload})
     return data
   },
 
+  //docs mediaMessage - https://doc.evolution-api.com/v1/api-reference/message-controller/send-media
   async sendMedia(instance: string, payload: MediaPayload) {
     const type = mimeTypes[payload.mediaType]
 
