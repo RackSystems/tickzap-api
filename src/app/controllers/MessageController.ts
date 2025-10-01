@@ -24,5 +24,10 @@ export default {
     res.status(201).json(message)
   },
 
-  //todo audioMessage - https://doc.evolution-api.com/v1/api-reference/message-controller/send-audio
+  //send messages by tickzap using evolution integration
+  async sendMessage(req: Request, res: Response) {
+    console.log('CONTROLER - BODY ', req.body);
+    const message = await MessageService.sendMessage(req.body)
+    res.json(message)
+  }
 }

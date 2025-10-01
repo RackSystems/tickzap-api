@@ -5,6 +5,7 @@ import {AudioPayload} from '../interfaces/AudioPayload'
 import {TextPayload} from '../interfaces/TextPayload'
 import prisma from '../../config/database';
 import StorageService from "./StorageService";
+import {initiateConversation} from "../../helpers/TicketHelper";
 
 type TicketMessage = {
   contactId: string;
@@ -50,14 +51,7 @@ export default {
     }
 
     if (!data.ticketId) {
-      const createdTicket = await prisma.ticket.create({
-        data: {
-          contactId: data.contactId,
-          channelId: data.channelId,
-          status: TicketStatus.PENDING,
-          userId: data.userId,
-        } satisfies TicketMessage
-      });
+      const createdTicket = await initiateConversation(data);
 
       data.ticketId = createdTicket.id;
       data.status = MessageStatus.SEND;
@@ -138,15 +132,26 @@ export default {
 
   //para usar essa funçao, vai precisar usar a store antes, pois ela valida o payload e cria a mensagem que sera enviada
   async sendMessage(data: Message) {
-    const ticket = await prisma.ticket.findUnique({
-      where: { id: data.ticketId }
-    });
+    let ticket: Ticket;
+    let sended: any;
 
+    if (!data.channelId) {
+      throw new Error('Esse canal não foi encontrado');
+    }
+
+    if (!data.ticketId) {
+      ticket = await initiateConversation(data);
+    } else {
+      ticket = await prisma.ticket.findUnique({
+        where: { id: data.ticketId }
+      });
+    }
+    console.log('PAYLOAD E TICKET ', ticket, data);
     if (!ticket) {
       throw new Error('Esse ticket não foi encontrado');
     }
 
-    if (ticket.status !== TicketStatus.PENDING) {
+    if (ticket.status === TicketStatus.CLOSED) {
       return;
     }
 
@@ -167,20 +172,20 @@ export default {
           mediaType: data.mediaType,
           number: contact?.phone,
         };
-        await message.sendMedia(instance, media);
+        sended = await message.sendMedia(instance, media);
       }
 
-      //todo send text message
+      //send text message
       else if (data.content) {
         let text: TextPayload;
         text = {
           text: data.content,
           number: contact?.phone,
         };
-        await message.sendText(instance, text);
+        sended = await message.sendText(instance, text);
       }
 
-      //todo send audio message
+      //send audio message
       else {
         let audio: AudioPayload;
         //front end grava o audio, envia para o minio, e o minio retorna o url do audio
@@ -188,28 +193,32 @@ export default {
           audio: data.mediaUrl,
           number: contact?.phone,
         };
-        await message.sendAudio(instance, audio);
+        sended = await message.sendAudio(instance, audio);
       }
 
-      //atualizar mensagem
-      await prisma.message.update({
-        where: { id: data.id },
-        data: {
+      const { channelId, ...messageData } = data;
+
+      //salvar mensagem
+      await prisma.message.create({
+        data: { ...messageData,
+          id: sended.key.id,
+          ticketId: ticket.id,
+          contactId: contact?.id,
           type: MessageType.USER,
           status: MessageStatus.SEND,
           sentAt: new Date(),
         }
       });
 
-      // MessageType.USER
     } catch (error) {
-      await prisma.message.update({
-        where: { id: data.id },
-        data: {
-          type: MessageType.USER,
-          status: MessageStatus.FAILED,
-        }
-      });
+      // await prisma.message.create({
+      //   data: {
+      //     ...messageData,
+      //     id: sended.key.id || `${Date.now()}${Math.random()}`,
+      //     type: MessageType.USER,
+      //     status: MessageStatus.FAILED,
+      //   }
+      // });
       throw new Error('Falha ao enviar mensagem');
     }
   }
