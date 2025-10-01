@@ -1,16 +1,17 @@
-import {Message, Ticket, TicketStatus, Prisma} from '@prisma/client';
+import {Message, TicketStatus, Prisma} from '@prisma/client';
 import prisma from '../../config/database';
+import StorageService from "./StorageService";
 
 type TicketMessage = {
-  contactId: String;
-  channelId: String;
-  status: TicketStatus.PENDING;
-  userId?: String;
+  contactId: string;
+  channelId: string;
+  status: TicketStatus;
+  userId?: string;
 };
 
 type MediaMessage = {
   mediaType: MediaType;
-  mediaUrl: String;
+  mediaUrl: string;
 };
 
 enum MessageStatus {
@@ -33,7 +34,7 @@ enum MediaType {
  *
  **/
 export default {
-  async store(data: Message): Promise<Message> {
+  async store(data: Prisma.MessageUncheckedCreateInput): Promise<Message> {
     if (data.ticketId) {
       data.status = MessageStatus.RECEIVED;
     }
@@ -61,12 +62,25 @@ export default {
   },
 
   async index(ticketId: string): Promise<Message[]> {
-    return prisma.message.findMany({
+    const messages = await prisma.message.findMany({
       where: {ticketId},
       orderBy: {
         createdAt: 'asc',
       },
     });
+
+    return Promise.all(
+      messages.map(async (message) => {
+        if (message.mediaUrl) {
+          try {
+            message.mediaUrl = await StorageService.getSignedUrl(message.mediaUrl);
+          } catch (error) {
+            console.error(`Failed to get signed URL for ${message.mediaUrl}:`, error);
+          }
+        }
+        return message;
+      })
+    );
   },
 
   async show(filter: Prisma.MessageWhereUniqueInput): Promise<Message | null> {
