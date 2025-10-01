@@ -59,6 +59,7 @@ router.delete('/tickets/:id', authMiddleware, handleValidation, TicketController
 router.get('/tickets/:id/messages', authMiddleware, MessageController.index)
 // router.get('/tickets/:id/messages/:messageId', authMiddleware, handleValidation, MessageController.show)
 router.post('/tickets/messages', authMiddleware, MessageController.store)
+router.post('/tickets/messages/send', authMiddleware, MessageController.sendMessage)
 
 // Webhooks
 router.post('/webhook/evolution', WebhookController.evolutionHandle);
