@@ -1,6 +1,9 @@
 import {S3Client, PutObjectCommand, GetObjectCommand} from "@aws-sdk/client-s3";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 import {UploadParams} from "../interfaces/StorageInterface";
+import {MediaType, MessageType, TicketStatus} from "@prisma/client";
+import HttpException from "../exceptions/HttpException";
+
 
 // Common S3 configuration
 const region = process.env.S3_REGION || 'us-east-1';
@@ -35,6 +38,31 @@ const s3PublicClient = new S3Client({
   ...(publicEndpoint ? {endpoint: publicEndpoint, forcePathStyle: true} : (internalEndpoint && {endpoint: internalEndpoint, forcePathStyle: true})),
 });
 
+const messageTypeToMediaTypeMap: Record<string, MediaType> = {
+  imageMessage: 'IMAGE',
+  videoMessage: 'VIDEO',
+  audioMessage: 'AUDIO',
+  documentMessage: 'DOCUMENT',
+  stickerMessage: 'IMAGE',
+};
+
+/**
+ * Interface para upload de mídia genérico
+ */
+interface UploadMediaParams {
+  base64Data: string;
+  fileName: string;
+  mimeType: string;
+  ticketId: string;
+}
+
+/**
+ * Interface para o resultado do upload
+ */
+interface UploadMediaResult {
+  mediaUrl: string;
+  mediaType: MediaType | null;
+}
 
 export default {
   async upload({buffer, key, mimeType}: UploadParams): Promise<string> {
@@ -69,5 +97,45 @@ export default {
     // Use the public client to generate a URL accessible from the browser
     // The URL will be valid for 1 hour
     return getSignedUrl(s3PublicClient, command, {expiresIn: 3600});
+  },
+
+  /**
+   * Função genérica para fazer upload de mídia para o Minio
+   * Não depende de Message.convertMedia
+   */
+  async uploadMediaToStorage(params: UploadMediaParams): Promise<UploadMediaResult> {
+    const { base64Data, fileName, mimeType, ticketId } = params;
+
+    if (!base64Data || typeof base64Data !== 'string') {
+      throw new HttpException('Dados base64 inválidos ou não fornecidos.', 415);
+    }
+
+    // Converte base64 para Buffer
+    const fileBuffer = Buffer.from(base64Data, 'base64');
+
+    // Define a chave do arquivo no storage
+    const fileKey = `tickets/${ticketId}/${fileName}`;
+
+    // Faz upload para o storage
+    const mediaUrl = await this.upload({
+      buffer: fileBuffer,
+      key: fileKey,
+      mimeType: mimeType,
+    });
+
+    // Determina o tipo de mídia baseado no mimetype
+    let mediaType: MediaType | null = null;
+    if (mimeType.startsWith('image/')) {
+      mediaType = MediaType.IMAGE;
+    } else if (mimeType.startsWith('video/')) {
+      mediaType = MediaType.VIDEO;
+    } else if (mimeType.startsWith('audio/')) {
+      mediaType = MediaType.AUDIO;
+    } else if (mimeType.startsWith('application/') || mimeType.startsWith('text/')) {
+      mediaType = MediaType.DOCUMENT;
+    }
+
+    return { mediaUrl, mediaType };
   }
+
 };

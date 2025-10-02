@@ -7,6 +7,7 @@ import ContactController from '../app/controllers/ContactController';
 import TicketController from '../app/controllers/TicketController';
 import WebhookController from '../app/controllers/WebhookController';
 import MessageController from "../app/controllers/MessageController";
+import StorageController from "../app/controllers/StorageController";
 import {handleValidation} from '../app/middlewares/handleValidationMiddleware';
 import {
   validateUserStore,
@@ -60,6 +61,8 @@ router.get('/tickets/:id/messages', authMiddleware, MessageController.index)
 // router.get('/tickets/:id/messages/:messageId', authMiddleware, handleValidation, MessageController.show)
 router.post('/tickets/messages', authMiddleware, MessageController.store)
 router.post('/tickets/messages/send', authMiddleware, MessageController.sendMessage)
+
+router.post('storage/upload', authMiddleware, StorageController.upload)
 
 // Webhooks
 router.post('/webhook/evolution', WebhookController.evolutionHandle);
