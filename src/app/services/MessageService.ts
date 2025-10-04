@@ -1,4 +1,4 @@
-import {Message, TicketStatus, Prisma} from '@prisma/client';
+import {Message, Prisma, TicketStatus} from '@prisma/client';
 import message from '..//integrations/evolution/Message';
 import prisma from '../../config/database';
 import StorageService from "./StorageService";
@@ -7,6 +7,7 @@ import HttpException from "../exceptions/HttpException";
 import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
+import {response} from "express";
 
 type MediaMessage = {
   mediaType: MediaType;
@@ -138,7 +139,7 @@ export default {
       throw new HttpException('Ticket fechado', 400);
     }
 
-    const channel = await ChannelService.show({id: contact?.channelId});
+    const channel = await ChannelService.show({id: contact.channelId});
 
     if (!channel) {
       throw new HttpException('Canal não foi encontrado', 404);
@@ -161,7 +162,7 @@ export default {
           media: data.mediaUrl,
           type: data.mediaType,
           mediaType: data.mediaType,
-          number: contact?.phone,
+          number: contact.phone,
         });
 
         messageToStore.mediaUrl = data.mediaUrl;
@@ -181,13 +182,14 @@ export default {
       else {
         const response = await message.sendAudio(channel.name, {
           audio: data.mediaUrl,
-          number: contact?.phone,
+          number: contact.phone,
         });
 
         messageToStore.mediaUrl = data.mediaUrl;
         messageToStore.mediaType = MediaType.AUDIO;
       }
 
+      // @ts-ignore
       messageToStore.id = response.key.id;
 
       await this.store(messageToStore);
