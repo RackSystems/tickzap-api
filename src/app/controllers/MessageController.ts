@@ -2,7 +2,7 @@ import {Request, Response} from 'express'
 import MessageService from "../services/MessageService";
 
 export default {
-  async index(req: Request, res: Response) {
+  async index(req: Request, res: Response): Promise<void> {
     const ticketId = req.params.id as string | undefined;
 
     if (!ticketId) {
@@ -14,19 +14,18 @@ export default {
     res.json(message)
   },
 
-  async show(req: Request, res: Response) {
+  async show(req: Request, res: Response): Promise<void> {
     const message = await MessageService.show({id: req.params.id})
     res.json(message)
   },
 
-  async store(req: Request, res: Response) {
+  async store(req: Request, res: Response): Promise<void> {
     const message = await MessageService.store(req.body)
     res.status(201).json(message)
   },
 
   //send messages by tickzap using evolution integration
-  async sendMessage(req: Request, res: Response) {
-    console.log('CONTROLER - BODY ', req.body);
+  async sendMessage(req: Request, res: Response): Promise<void> {
     const message = await MessageService.sendMessage(req.body)
     res.json(message)
   }

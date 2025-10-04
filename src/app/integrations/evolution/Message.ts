@@ -38,7 +38,7 @@ const mimeTypes: Record<string, 'document' | 'image' | 'audio' | 'video'> = {
 
 export default {
   async sendText(instance: string, payload: TextPayload) {
-    const {data} = await client.post(`/message/sendText/${instance}`, {payload})
+    const {data} = await client.post(`/message/sendText/${instance}`, payload)
     return data
   },
 
