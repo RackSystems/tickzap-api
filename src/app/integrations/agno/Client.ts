@@ -11,7 +11,7 @@ export class AgnoAiClient {
         };
 
         if (!agnoConfig.token || !agnoConfig.base_url) {
-            throw new HttpException('Configuração inválida para a API Ultron.', 400);
+            throw new HttpException('Configuração inválida para a API.', 400);
         }
 
         this.client = axios.create({
