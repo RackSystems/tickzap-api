@@ -16,13 +16,13 @@ export default {
     return data;
   },
 
-  async destroy(instanceId: string) {
-    const { data } = await client.delete(`/instance/delete/${instanceId}`);
+  async destroy(instanceName: string) {
+    const { data } = await client.delete(`/instance/delete/${instanceName}`);
     return data;
   },
 
-  async logout(instanceId: string) {
-    const { data } = await client.delete(`/instance/logout/${instanceId}`);
+  async logout(instanceName: string) {
+    const { data } = await client.delete(`/instance/logout/${instanceName}`);
     return data;
   },
 

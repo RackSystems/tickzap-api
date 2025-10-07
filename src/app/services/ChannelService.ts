@@ -18,18 +18,19 @@ export default {
     };
 
     /* eslint-disable */
-    const evolutionResponse: any = await Instance.create(payload);
+    const response: any = await Instance.create(payload);
 
-    if (!evolutionResponse || !evolutionResponse.instance.status || !evolutionResponse.hash) {
+    if (!response || !response.instance) {
       throw new Error("Failed to create channel in Evolution");
     }
 
-    await this.setWebhook(evolutionResponse.instance.instanceName);
+    await this.setWebhook(response.instance.instanceName);
 
     const channelData = {
       ...data,
-      status: evolutionResponse.instance.status,
-      identifier: evolutionResponse.hash,
+      status: response.instance.status,
+      identifier: response.instance.instanceId,
+      name: response.instance.instanceName,
     };
 
     return prisma.channel.create({ data: channelData });
@@ -42,29 +43,12 @@ export default {
       throw new Error("Channel not found");
     }
 
-    const statusResponse = await this.getStatus(id);
-    // Check various possible status values that indicate connection
-    const isConnected =
-      statusResponse &&
-      (statusResponse.instance?.connectionStatus === "open" ||
-        statusResponse.instance?.status === "open" ||
-        statusResponse.connectionStatus === "open" ||
-        statusResponse.status === "open" ||
-        statusResponse.instance?.state === "open");
-
-    if (isConnected) {
-      await this.logout(id);
+    if (channel.status === "open") {
+      await Instance.logout(channel.name);
     }
 
-    // Delete the instance from Evolution
-    try {
-      await Instance.destroy(channel.name);
-    } catch (error) {
-      console.error("Error deleting instance from Evolution:", error);
-      // Continue with database deletion even if Evolution deletion fails
-    }
+    await Instance.destroy(channel.name);
 
-    // Delete from database
     return prisma.channel.delete({
       where: { id },
     });

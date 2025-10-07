@@ -29,7 +29,7 @@ model Channel {
   id              String    @id @default(cuid())
   name            String
   type            String
-  identifier      String
+  identifier      String    @unique
   status          String    @default("disconnected")
   isAuthenticated String    @default("false")
   createdAt       DateTime  @default(now())
