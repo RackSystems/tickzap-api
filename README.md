@@ -69,4 +69,9 @@ tickzap-api/
 ### Prisma
 
 - Execute `npx prisma migrate dev` após mudanças no schema
+- Execute `npx prisma migrate deploy` para atualizar o banco de dados
 - Use `npx prisma studio` para visualizar o banco de dados
+
+- Execute `npx prisma generate` para gerar arquivos de tipos
+- Execute `npx prisma db push` para atualizar o banco de dados
+- Execute `npx prisma db pull` para atualizar o schema do banco de dados
