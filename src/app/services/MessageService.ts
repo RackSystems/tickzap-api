@@ -1,3 +1,4 @@
+// @ts-ignore
 import {Message, Prisma, TicketStatus} from '@prisma/client';
 import message from '..//integrations/evolution/Message';
 import prisma from '../../config/database';
@@ -6,6 +7,7 @@ import HttpException from "../exceptions/HttpException";
 import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
+// @ts-ignore
 import {response} from "express";
 import {Ticket} from "../interfaces/TicketInterface";
 
@@ -134,35 +136,39 @@ export default {
     },
 
     async sendMessage(data: any): Promise<any> {
-        //criar ticket ao enviar a privmeira mensagem - iniciar conversa
-        let ticket: Ticket;
-        if(!data.ticketId) {
-            ticket = await prisma.ticket.create({
-                data: {
-                    contactId: data.contactId,
-                    channelId: data.channelId,
-                    status: TicketStatus.PENDING,
-                    UserId: data.userId,
-                }
-            }); //todo: pegar usuario logado no ticketId
-        } else {
-            ticket = await TicketService.show({id: data.ticketId});
-        }
-
         const contact = await ContactService.show({id: data.contactId});
 
-        if (!contact || !ticket || !contact?.channelId || !contact?.phone) {
+        if (!contact || !contact?.channelId || !contact?.phone) {
             throw new HttpException('Algo não foi encontrado', 404);
-        }
-
-        if (ticket.status === TicketStatus.CLOSED) {
-            throw new HttpException('Ticket fechado', 400);
         }
 
         const channel = await ChannelService.show({id: contact.channelId});
 
         if (!channel) {
             throw new HttpException('Canal não foi encontrado', 404);
+        }
+
+        //criar ticket ao enviar a privmeira mensagem - iniciar conversa
+        let ticket: Ticket;
+        if (!data.ticketId) {
+            ticket = await prisma.ticket.create({
+                data: {
+                    contactId: data.contactId,
+                    channelId: channel.id,
+                    status: TicketStatus.PENDING,
+                    UserId: data.userId,
+                }
+            });
+        } else {
+            ticket = await TicketService.show({id: data.ticketId});
+        }
+
+        if (!ticket) {
+            throw new HttpException('Esse ticket não foi encontrado', 404);
+        }
+
+        if (ticket.status === TicketStatus.CLOSED) {
+            throw new HttpException('Ticket fechado', 400);
         }
 
         try {
@@ -209,6 +215,9 @@ export default {
                 messageToStore.mediaType = MediaType.AUDIO;
             }
 
+            if (!response?.key?.id) {
+                throw new HttpException('Resposta inesperada da API Evolution', 500);
+            }
             // @ts-ignore
             messageToStore.id = response.key.id;
 
