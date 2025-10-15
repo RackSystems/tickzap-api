@@ -115,3 +115,17 @@ model Message {
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
+
+model Agent {
+  id                  String   @id @default(cuid())
+  name                String
+  communication_style String
+  behavior            String?
+  purpose             String?
+  company_support     String?
+  company_description String?
+  ai_provider         String?
+  ai_model            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
