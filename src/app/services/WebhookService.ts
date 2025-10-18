@@ -6,6 +6,7 @@ import MessageService from "../services/MessageService";
 import { MediaType, MessageType, TicketStatus } from ".prisma/client";
 import Message from "../integrations/evolution/Message";
 import StorageService from "./StorageService";
+import { agentProcessingQueue } from '../queues';
 
 const messageTypeToMediaTypeMap: Record<string, MediaType> = {
   imageMessage: "IMAGE",
@@ -105,6 +106,16 @@ export default {
       });
 
       console.log(`Message created successfully: ${key.id}`);
+
+      // If there is text content, enqueue for agent processing
+      if (content) {
+        await agentProcessingQueue.add('process-message', {
+          message: content,
+          sessionId: key.remoteJid,
+          ticketId: ticket.id,
+        });
+        console.log(`Message enqueued for agent processing: ${key.id}`);
+      }
     } catch (error) {
       console.error("Error in handleMessagesUpsert:", error);
       throw error;

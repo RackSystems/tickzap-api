@@ -10,31 +10,9 @@ import ChannelService from "./ChannelService";
 // @ts-ignore
 import {response} from "express";
 import {Ticket} from "../interfaces/TicketInterface";
+import {MediaMessage, MessageStatus, MediaType, MessageType} from "../enums/MessageEnum";
 
-type MediaMessage = {
-    mediaType: MediaType;
-    mediaUrl: string;
-};
 
-enum MessageStatus {
-    SEND = 'SEND',
-    RECEIVED = 'RECEIVED',
-    READ = 'READ',
-    FAILED = 'FAILED'
-}
-
-enum MediaType {
-    IMAGE = 'IMAGE',
-    AUDIO = 'AUDIO',
-    VIDEO = 'VIDEO',
-    DOCUMENT = 'DOCUMENT',
-}
-
-enum MessageType {
-    USER = 'USER',
-    CLIENT = 'CLIENT',
-    BOT = 'BOT'
-}
 
 /**
  * ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,
