@@ -4,7 +4,7 @@ import routes from './routes/api';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import ErrorHandler from "./app/middlewares/ErrorHandler";
-
+//todo conferir
 // Import and start BullMQ workers
 import './app/workers/agentProcessingWorker';
 import './app/workers/agentResponseWorker';

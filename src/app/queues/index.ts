@@ -25,3 +25,4 @@ export const agentResponseQueue = new Queue(AGENT_RESPONSE_QUEUE, {
     },
   },
 });
+//todo conferir

@@ -12,7 +12,7 @@ import {response} from "express";
 import {Ticket} from "../interfaces/TicketInterface";
 import {MediaMessage, MessageStatus, MediaType, MessageType} from "../enums/MessageEnum";
 
-
+//todo conferir
 
 /**
  * ao receber a mensagem (vem pelo webhook e ele cria o ticket) tem o ticketId, vai salvar no banco,

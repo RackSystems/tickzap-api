@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { AGENT_PROCESSING_QUEUE, agentResponseQueue } from '../queues';
 import { redisConnection } from '../../config/redis';
 import Agent from '../integrations/agno/Agent';
-
+//todo conferir
 interface AgentProcessingJobData {
     message: string;
     sessionId: string;

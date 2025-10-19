@@ -8,7 +8,7 @@ import ChannelService from '../services/ChannelService';
 import message from '../integrations/evolution/Message';
 import { MessageType, MessageStatus } from '../enums/MessageEnum';
 import HttpException from '../exceptions/HttpException';
-
+//todo conferir
 interface AgentResponseJobData {
     response: any; // A resposta completa do Agent.useAgent
     sessionId: string;

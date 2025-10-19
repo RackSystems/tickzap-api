@@ -1,3 +1,4 @@
+//todo conferir
 export enum MessageStatus {
     SEND = 'SEND',
     RECEIVED = 'RECEIVED',

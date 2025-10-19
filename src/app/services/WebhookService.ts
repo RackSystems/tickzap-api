@@ -107,6 +107,7 @@ export default {
 
       console.log(`Message created successfully: ${key.id}`);
 
+      //todo analisar
       // If there is text content, enqueue for agent processing
       if (content) {
         await agentProcessingQueue.add('process-message', {
