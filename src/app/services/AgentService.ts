@@ -1,6 +1,7 @@
-import { Prisma, Agent } from "@prisma/client";
+import { Agent, Prisma } from "@prisma/client";
 import prisma from "../../config/database";
 import HttpException from "../exceptions/HttpException";
+import AgnoAgent from "../integrations/agno/Agent";
 
 type AgentQuery = {
   name?: string;
@@ -55,5 +56,10 @@ export default {
     return prisma.agent.delete({
       where: { id },
     });
+  },
+
+  async use(id: string, payload: { message: string; session_id: string; user_id: string }) {
+    await this.show({ id });
+    return AgnoAgent.useAgent(id, payload);
   },
 };

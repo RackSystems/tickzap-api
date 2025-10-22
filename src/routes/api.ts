@@ -13,7 +13,7 @@ import { validateUserStore, validateUserUpdate, validateUserStatus } from "../ap
 import { validateContactStore, validateContactUpdate } from "../app/validators/ContactValidator";
 import { validateTicketStore, validateTicketUpdate } from "../app/validators/TicketValidator";
 import AgentController from "../app/controllers/AgentController";
-import { validateAgentStore, validateAgentUpdate } from "../app/validators/AgentValidator";
+import { validateAgentStore, validateAgentUpdate, validateUseAgent } from "../app/validators/AgentValidator";
 
 const router = Router();
 
@@ -66,6 +66,7 @@ router.get("/agents/:id", authMiddleware, AgentController.show);
 router.post("/agents", authMiddleware, validateAgentStore, handleValidation, AgentController.store);
 router.put("/agents/:id", authMiddleware, validateAgentUpdate, handleValidation, AgentController.update);
 router.delete("/agents/:id", authMiddleware, AgentController.destroy);
+router.post("/agents/:id/use", authMiddleware, validateUseAgent, handleValidation, AgentController.use);
 
 // Storage
 router.post("/storage/upload", authMiddleware, StorageController.upload);

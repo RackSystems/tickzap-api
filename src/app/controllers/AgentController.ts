@@ -29,4 +29,10 @@ export default {
     await AgentService.destroy(id);
     res.status(204).end();
   },
+
+  async use(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const response = await AgentService.use(id, req.body);
+    res.json(response);
+  },
 };

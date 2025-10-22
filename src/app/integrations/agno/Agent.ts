@@ -3,16 +3,17 @@ import client from "./Client";
 export interface useAgentPayload {
   message: string;
   session_id: string;
+  user_id: string;
 }
 
 export default {
   /**
    * Chama o agente diretamente (rota /use)
-   * @returns {Promise<object>}
+   * @param id
    * @param payload
    */
-  async useAgent(payload: useAgentPayload) {
-    const { data } = await client.post("/use", payload);
+  async useAgent(id: string, payload: useAgentPayload) {
+    const { data } = await client.post(`/agents/${id}/use`, payload);
     return data;
   },
 };

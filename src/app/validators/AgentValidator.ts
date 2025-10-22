@@ -21,3 +21,9 @@ export const validateAgentUpdate = [
   body("ai_provider").optional().isString(),
   body("ai_model").optional().isString(),
 ];
+
+export const validateUseAgent = [
+  body("message").notEmpty().withMessage("Message cannot be empty"),
+  body("session_id").notEmpty().withMessage("Session ID cannot be empty"),
+  body("user_id").notEmpty().withMessage("User ID cannot be empty"),
+];
