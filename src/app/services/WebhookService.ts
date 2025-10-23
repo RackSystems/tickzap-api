@@ -15,8 +15,6 @@ const messageTypeToMediaTypeMap: Record<string, MediaType> = {
   stickerMessage: "IMAGE",
 };
 
-const useAgent = true;
-
 export default {
   async handleMessagesUpsert(payload: any): Promise<void> {
     try {
@@ -107,11 +105,6 @@ export default {
       });
 
       console.log(`Message created successfully: ${key.id}`);
-
-      if (useAgent) {
-        //todo add message to queue
-
-      }
     } catch (error) {
       console.error("Error in handleMessagesUpsert:", error);
       throw error;
