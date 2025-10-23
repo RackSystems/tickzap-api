@@ -1,4 +1,3 @@
-// @ts-ignore
 import { Message, Prisma, TicketStatus } from "@prisma/client";
 import message from "..//integrations/evolution/Message";
 import prisma from "../../config/database";
@@ -7,9 +6,6 @@ import HttpException from "../exceptions/HttpException";
 import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
-// @ts-ignore
-import { response } from "express";
-import { Ticket } from "../interfaces/TicketInterface";
 
 type MediaMessage = {
   mediaType: MediaType;

@@ -71,6 +71,7 @@ model Ticket {
   status    TicketStatus
   UserId    String?
   user      User?        @relation(fields: [UserId], references: [id])
+  useAI     Boolean?     @default(true)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   messages  Message[]

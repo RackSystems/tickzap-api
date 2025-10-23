@@ -6,6 +6,7 @@ export interface Ticket {
   channelId: string;
   status: TicketStatus;
   UserId?: string;
+  useAI: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
