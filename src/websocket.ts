@@ -1,62 +1,105 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
+import IORedis from 'ioredis';
 
-let wss: WebSocketServer;
+const redis = new IORedis(process.env.REDIS_URL);
 
-export const clients = new Map<string, WebSocket>();
+//WebSocket types
+export const ticketClients = new Map<string, WebSocket>();
+export const globalClients = new Map<string, WebSocket>();
 
-export const initWebSocket = (server: Server) => {
-    wss = new WebSocketServer({ server });
+const initWebSocket = (
+    server: Server,
+    path: string,
+    clientsMap: Map<string, WebSocket>,
+    type: 'ticket' | 'global'
+) => {
+    const wss = new WebSocketServer({ server, path });
 
     wss.on('connection', (ws: WebSocket) => {
         const clientId = Math.random().toString(36).substring(2, 15);
-        clients.set(clientId, ws);
-        console.log(`Client ${clientId} connected`);
+        clientsMap.set(clientId, ws);
+        console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Client ${clientId} connected`);
 
-        // Enviar ID para o cliente
-        ws.send(JSON.stringify({ type: 'connection', clientId }));
+        // send id for client
+        ws.send(JSON.stringify({ type: 'connection', clientId, socketType: type }));
 
-        ws.on('close', () => {
-            clients.delete(clientId);
-            console.log(`Client ${clientId} disconnected`);
+        ws.on('close', async () => {
+            //clear and disconnect
+            if (type === 'ticket') {
+                await redis.del(`client:${clientId}:watching`);
+            } else {
+                const channelId = await redis.get(`client:${clientId}:channel`);
+                if (channelId) {
+                    await redis.srem(`channel:${channelId}:global`, clientId);
+                }
+                await redis.del(`client:${clientId}:channel`);
+            }
+
+            clientsMap.delete(clientId);
+            console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Client ${clientId} disconnected`);
         });
 
         ws.on('error', (error) => {
-            console.error(`Client ${clientId} error:`, error);
-            clients.delete(clientId);
+            console.error(`${type === 'ticket' ? 'Ticket' : 'Global'} Client ${clientId} error:`, error);
+            clientsMap.delete(clientId);
         });
 
-        // Opcional: responder a mensagens do cliente
-        ws.on('message', (data) => {
+        // client messages
+        ws.on('message', async (data) => {
             try {
                 const message = JSON.parse(data.toString());
-                console.log(`Message from ${clientId}:`, message);
+                console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Message from ${clientId}:`, message);
 
-                // Echo opcional - enviar de volta para o mesmo cliente
-                // ws.send(JSON.stringify({ ...message, echoed: true }));
+                if (type === 'ticket') {
+                    // ticket messages - send by frontend
+                    if (message.type === 'watchTicket') {
+                        const { ticketId } = message;
+                        await redis.set(`client:${clientId}:watching`, ticketId);
+                        console.log(`Client ${clientId} watching ticket ${ticketId}`);
+                    }
+
+                    if (message.type === 'unwatchTicket') {
+                        await redis.del(`client:${clientId}:watching`);
+                        console.log(`Client ${clientId} stopped watching ticket`);
+                    }
+                } else {
+                    // global messages - send by frontend
+                    if (message.type === 'joinChannel') {
+                        const { channelId } = message;
+                        await redis.sadd(`channel:${channelId}:global`, clientId);
+                        await redis.set(`client:${clientId}:channel`, channelId);
+                        console.log(`Client ${clientId} joined global channel ${channelId}`);
+                    }
+
+                    if (message.type === 'leaveChannel') {
+                        const { channelId } = message;
+                        await redis.srem(`channel:${channelId}:global`, clientId);
+                        await redis.del(`client:${clientId}:channel`);
+                        console.log(`Client ${clientId} left global channel ${channelId}`);
+                    }
+                }
+
             } catch (error) {
-                console.error('Error parsing message:', error);
+                console.error(`Error parsing ${type} message:`, error);
             }
         });
     });
+
+    return wss;
 };
 
-export const broadcast = (message: object) => {
-    if (!wss) {
-        console.error('WebSocket server not initialized');
-        return;
-    }
-
-    const serializedMessage = JSON.stringify(message);
-    clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(serializedMessage);
-        }
-    });
+export const initTicketWebSocket = (server: Server) => {
+    return initWebSocket(server, '/ws-ticket', ticketClients, 'ticket');
 };
 
-export const sendToClient = (clientId: string, message: object) => {
-    const client = clients.get(clientId);
+export const initGlobalWebSocket = (server: Server) => {
+    return initWebSocket(server, '/ws-global', globalClients, 'global');
+};
+
+// Ticket WebSocket
+export const sendToTicketClient = (clientId: string, message: object) => {
+    const client = ticketClients.get(clientId);
     if (client && client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(message));
         return true;
@@ -64,6 +107,83 @@ export const sendToClient = (clientId: string, message: object) => {
     return false;
 };
 
-export const getConnectedClients = (): string[] => {
-    return Array.from(clients.keys());
+export const broadcastToWatchingTicket = async (ticketId: string, message: object) => {
+    const keys = await redis.keys('client:*:watching');
+
+    let count = 0;
+    for (const key of keys) {
+        const watchingTicketId = await redis.get(key);
+        if (watchingTicketId === ticketId) {
+            const clientId = key.replace('client:', '').replace(':watching', '');
+            if (sendToTicketClient(clientId, message)) {
+                count++;
+            }
+        }
+    }
+    console.log(`Broadcast to ${count} clients watching ticket ${ticketId}`);
+    return count;
+};
+
+// Global WebSocket
+export const sendToGlobalClient = (clientId: string, message: object) => {
+    const client = globalClients.get(clientId);
+    if (client && client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(message));
+        return true;
+    }
+    return false;
+};
+
+export const broadcastToChannel = async (channelId: string, message: object) => {
+    const clients = await redis.smembers(`channel:${channelId}:global`);
+    let count = 0;
+
+    clients.forEach(clientId => {
+        if (sendToGlobalClient(clientId, message)) {
+            count++;
+        }
+    });
+
+    console.log(`Broadcast to ${count} clients in channel ${channelId}`);
+    return count;
+};
+
+// broadcast geral
+export const broadcastToAllTickets = (message: object) => {
+    const serializedMessage = JSON.stringify(message);
+    let count = 0;
+
+    ticketClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(serializedMessage);
+            count++;
+        }
+    });
+
+    console.log(`Broadcast to ${count} ticket clients`);
+    return count;
+};
+
+export const broadcastToAllGlobals = (message: object) => {
+    const serializedMessage = JSON.stringify(message);
+    let count = 0;
+
+    globalClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(serializedMessage);
+            count++;
+        }
+    });
+
+    console.log(`Broadcast to ${count} global clients`);
+    return count;
+};
+
+// helpers
+export const getConnectedTicketClients = (): string[] => {
+    return Array.from(ticketClients.keys());
+};
+
+export const getConnectedGlobalClients = (): string[] => {
+    return Array.from(globalClients.keys());
 };

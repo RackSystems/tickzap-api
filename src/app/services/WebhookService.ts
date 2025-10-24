@@ -113,6 +113,7 @@ export default {
           message: content,
           session_id: ticket.id,
           user_id: contact.id,
+          channelId: channel.id,
         };
 
         const agent = await AgentService.index();

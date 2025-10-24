@@ -3,7 +3,8 @@ import IORedis from "ioredis";
 import Agent from "../integrations/agno/Agent";
 import dotenv from "dotenv";
 import sendMessage from "../services/MessageService";
-import { sendToClient } from "../../websocket";
+import {broadcastToChannel, broadcastToWatchingTicket} from "../../websocket";
+import {truncateWithoutCuttingWord} from '../../helpers/TicketHelper'
 
 dotenv.config();
 
@@ -18,6 +19,9 @@ const messageWorker = new Worker(
     const { agentId, payload } = job.data;
     console.log(`Processing message for agent ${agentId}`, payload);
     const response = await Agent.useAgent(agentId, payload);
+
+    job.data.response = response;
+
     if (response.message) {
       /*
        * ticketId: payload.session_id,
@@ -37,32 +41,47 @@ const messageWorker = new Worker(
   { connection },
 );
 
-//todo: o websocket precisa ter uma conexao para notificar o ticket atual, e outra para notificar a ultima mensagem de cada ticket (usado para todos os tickets existentes)
-
-messageWorker.on("completed", (job: Job) => {
+messageWorker.on("completed", async (job: Job) => {
   console.log(`Job ${job.id} has completed!`);
-  if (job.data.payload.clientId) {
-    sendToClient(job.data.payload.clientId, {
-      type: "messageProcessed",
+
+  const { session_id, user_id, channelId } = job.data.payload;
+  const response = job.data.response;
+
+  await broadcastToWatchingTicket(job.data.payload.session_id, {
+    type: "messageProcessed",
+    jobId: job.id,
+    ticketId: session_id,
+    contactId: user_id,
+    message: response?.message,
+    timestamp: new Date().toISOString(),
+  })
+
+  //global notification
+  if (channelId) {
+    await broadcastToChannel(channelId, {
+      type: "ticketUpdated",
       jobId: job.id,
-      ticketId: job.data.payload.session_id,
-      contactId: job.data.payload.user_id,
-    });
+      ticketId: session_id,
+      lastMessage: truncateWithoutCuttingWord(response?.message),
+      updatedAt: new Date().toISOString(),
+      hasNewMessage: true
+    })
+  } else {
+    console.warn(`No channelId for job ${job.id}, skipping global broadcast`);
   }
 });
 
-messageWorker.on("failed", (job: Job, err) => {
+// @ts-ignore
+messageWorker.on("failed", async (job: Job, err: Error) => {
   if (job) {
     console.log(`Job ${job.id} has failed with ${err.message}`);
-    if (job.data.payload.clientId) {
-      sendToClient(job.data.payload.clientId, {
-        type: "messageProcessingFailed",
-        jobId: job.id,
-        ticketId: job.data.payload.session_id,
-        contactId: job.data.payload.user_id,
-        error: err.message,
-      });
-    }
+    await broadcastToWatchingTicket(job.data.payload.session_id, {
+      type: "messageProcessingFailed",
+      jobId: job.id,
+      ticketId: job.data.payload.session_id,
+      contactId: job.data.payload.user_id,
+      error: err.message,
+    });
   } else {
     console.log(`A job has failed with ${err.message}`);
   }
