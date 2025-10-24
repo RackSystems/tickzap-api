@@ -3,6 +3,7 @@ import IORedis from "ioredis";
 import Agent from "../integrations/agno/Agent";
 import dotenv from "dotenv";
 import sendMessage from "../services/MessageService";
+import { sendToClient } from "../../websocket";
 
 dotenv.config();
 
@@ -36,13 +37,32 @@ const messageWorker = new Worker(
   { connection },
 );
 
+//todo: o websocket precisa ter uma conexao para notificar o ticket atual, e outra para notificar a ultima mensagem de cada ticket (usado para todos os tickets existentes)
+
 messageWorker.on("completed", (job: Job) => {
   console.log(`Job ${job.id} has completed!`);
+  if (job.data.payload.clientId) {
+    sendToClient(job.data.payload.clientId, {
+      type: "messageProcessed",
+      jobId: job.id,
+      ticketId: job.data.payload.session_id,
+      contactId: job.data.payload.user_id,
+    });
+  }
 });
 
 messageWorker.on("failed", (job: Job, err) => {
   if (job) {
     console.log(`Job ${job.id} has failed with ${err.message}`);
+    if (job.data.payload.clientId) {
+      sendToClient(job.data.payload.clientId, {
+        type: "messageProcessingFailed",
+        jobId: job.id,
+        ticketId: job.data.payload.session_id,
+        contactId: job.data.payload.user_id,
+        error: err.message,
+      });
+    }
   } else {
     console.log(`A job has failed with ${err.message}`);
   }

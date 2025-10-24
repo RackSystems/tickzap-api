@@ -35,7 +35,8 @@
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "ioredis": "^5.8.2",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",
@@ -44,6 +45,7 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/node": "^22.15.21",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
     "eslint": "^9.37.0",

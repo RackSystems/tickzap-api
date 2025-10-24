@@ -126,8 +126,6 @@ export default {
             removeOnComplete: true,
           },
         );
-
-        await this.addMessageToQueue(agent[0].id, payload);
       }
     } catch (error) {
       console.error("Error in handleMessagesUpsert:", error);
