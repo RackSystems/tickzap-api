@@ -25,5 +25,11 @@ export default {
   async destroy(req: Request, res: Response) {
     await TicketService.destroy(req.params.id)
     res.status(204).end()
+  },
+
+  async enableOrDisableAi(req: Request, res: Response): Promise<void> {
+    const {id} = req.params;
+    const ticket = await TicketService.enableOrDisableAi(id);
+    res.json(ticket);
   }
 }

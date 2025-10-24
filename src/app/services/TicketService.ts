@@ -1,5 +1,6 @@
 import {Ticket, Prisma, TicketStatus} from '@prisma/client';
 import prisma from '../../config/database';
+import HttpException from "../exceptions/HttpException";
 
 type TicketQuery = {
   contactId?: string;
@@ -85,5 +86,20 @@ export default {
     })
   },
 
-  //todo add function for toggle useAI - default false
+  //toggle useAI - default false
+  async enableOrDisableAi(id: string): Promise<Ticket | null> {
+    const tickets = await prisma.ticket.findUnique({where: {id}});
+    if (!tickets) {
+      throw new HttpException('Ticket não encontrado', 404);
+    }
+
+    const toggle = !tickets.isActive;
+
+    return prisma.ticket.update({
+      where: {id},
+      data: {
+        useAI: toggle,
+      },
+    });
+  },
 }

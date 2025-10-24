@@ -59,6 +59,7 @@ router.get("/tickets/:id/messages", authMiddleware, MessageController.index);
 // router.get('/tickets/:id/messages/:messageId', authMiddleware, handleValidation, MessageController.show)
 router.post("/tickets/messages", authMiddleware, MessageController.store);
 router.post("/tickets/messages/send", authMiddleware, MessageController.sendMessage);
+router.patch("/tickets/:id/ai", authMiddleware, TicketController.enableOrDisableAi);
 
 // Agents
 router.get("/agents", authMiddleware, AgentController.index);
