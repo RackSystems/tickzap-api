@@ -1,5 +1,5 @@
-import {Ticket, Prisma, TicketStatus} from '@prisma/client';
-import prisma from '../../config/database';
+import { Ticket, Prisma, TicketStatus } from "@prisma/client";
+import prisma from "../../config/database";
 import HttpException from "../exceptions/HttpException";
 
 type TicketQuery = {
@@ -17,13 +17,13 @@ export default {
       data.status = TicketStatus.PENDING;
     }
 
-    return prisma.ticket.create({data})
+    return prisma.ticket.create({ data });
   },
 
   async destroy(id: string): Promise<Ticket> {
     return prisma.ticket.delete({
-      where: {id}
-    })
+      where: { id },
+    });
   },
 
   //todo fix tipagem
@@ -50,16 +50,16 @@ export default {
         channel: true,
         user: true,
         messages: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 1,
-          select: { content: true, createdAt: true, mediaType: true }
-        }
-      }
+          select: { content: true, createdAt: true, mediaType: true },
+        },
+      },
     });
 
-    return (tickets).map((ticket) => {
-      const {messages, ...rest} = ticket || {};
-      return {...rest, lastMessage: messages[0] || null};
+    return tickets.map((ticket) => {
+      const { messages, ...rest } = ticket || {};
+      return { ...rest, lastMessage: messages[0] || null };
     });
   },
 
@@ -69,37 +69,34 @@ export default {
       include: {
         contact: true,
         channel: true,
-        user: true
-      }
+        user: true,
+      },
     });
   },
 
   async update(id: string, data: Prisma.TicketUncheckedUpdateInput): Promise<Ticket> {
     return prisma.ticket.update({
-      where: {id},
+      where: { id },
       data,
       include: {
         contact: true,
         channel: true,
-        user: true
-      }
-    })
-  },
-
-  //toggle useAI - default false
-  async enableOrDisableAi(id: string): Promise<Ticket | null> {
-    const tickets = await prisma.ticket.findUnique({where: {id}});
-    if (!tickets) {
-      throw new HttpException('Ticket não encontrado', 404);
-    }
-
-    const toggle = !tickets.isActive;
-
-    return prisma.ticket.update({
-      where: {id},
-      data: {
-        useAI: toggle,
+        user: true,
       },
     });
   },
-}
+
+  async toggleAI(id: string): Promise<Ticket> {
+    const ticket = await this.show({ id: id });
+    if (!ticket) {
+      throw new HttpException("Ticket não encontrado", 404);
+    }
+
+    return prisma.ticket.update({
+      where: { id },
+      data: {
+        useAI: !ticket.useAI,
+      },
+    });
+  },
+};
