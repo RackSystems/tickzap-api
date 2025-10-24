@@ -3,7 +3,7 @@ import client from "./Client";
 export interface useAgentPayload {
   message: string;
   session_id: string;
-  contact_id: string;
+  user_id: string;
 }
 
 export default {

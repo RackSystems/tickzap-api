@@ -112,19 +112,19 @@ export default {
         const payload = {
           message: content,
           session_id: ticket.id,
-          contact_id: contact.id,
+          user_id: contact.id,
         };
 
         const agent = await AgentService.index();
         const agentId = agent[0].id;
 
         await messageQueue.add(
-            "process-message",
-            { agentId, payload },
-            {
-              backoff: 5000,
-              removeOnComplete: true,
-            },
+          "process-message",
+          { agentId, payload },
+          {
+            backoff: 5000,
+            removeOnComplete: true,
+          },
         );
 
         await this.addMessageToQueue(agent[0].id, payload);
@@ -189,5 +189,5 @@ export default {
         });
       }
     }
-  }
+  },
 };
