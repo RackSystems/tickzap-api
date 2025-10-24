@@ -2,6 +2,7 @@ import { Worker, Job } from "bullmq";
 import IORedis from "ioredis";
 import Agent from "../integrations/agno/Agent";
 import dotenv from "dotenv";
+import sendMessage from "../services/MessageService"
 
 dotenv.config();
 
@@ -15,7 +16,22 @@ const messageWorker = new Worker(
   async (job: Job) => {
     const { agentId, payload } = job.data;
     console.log(`Processing message for agent ${agentId}`, payload);
-    await Agent.useAgent(agentId, payload);
+    const response = await Agent.useAgent(agentId, payload);
+    if (response.message) {
+        /*
+        * ticketId: payload.session_id,
+        * contactId: payload.contact_id,
+        * content: response.message,
+        * type: "BOT",
+        * */
+
+        await sendMessage.sendMessage({
+            ticketId: payload.session_id,
+            contactId: payload.contact_id,
+            content: response.message,
+            type: "BOT",
+        }); //send message processed by AI
+    }
   },
   { connection },
 );

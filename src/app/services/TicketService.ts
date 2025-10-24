@@ -84,4 +84,6 @@ export default {
       }
     })
   },
+
+  //todo add function for toggle useAI - default false
 }

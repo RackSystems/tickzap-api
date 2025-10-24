@@ -6,6 +6,8 @@ import MessageService from "../services/MessageService";
 import { MediaType, MessageType, TicketStatus } from ".prisma/client";
 import Message from "../integrations/evolution/Message";
 import StorageService from "./StorageService";
+import AgentService from "./AgentService";
+import { messageQueue } from "../queues/messageQueue";
 
 const messageTypeToMediaTypeMap: Record<string, MediaType> = {
   imageMessage: "IMAGE",
@@ -105,6 +107,28 @@ export default {
       });
 
       console.log(`Message created successfully: ${key.id}`);
+      //AI agent process message answer
+      if (ticket.useAI && content) {
+        const payload = {
+          message: content,
+          session_id: ticket.id,
+          contact_id: contact.id,
+        };
+
+        const agent = await AgentService.index();
+        const agentId = agent[0].id;
+
+        await messageQueue.add(
+            "process-message",
+            { agentId, payload },
+            {
+              backoff: 5000,
+              removeOnComplete: true,
+            },
+        );
+
+        await this.addMessageToQueue(agent[0].id, payload);
+      }
     } catch (error) {
       console.error("Error in handleMessagesUpsert:", error);
       throw error;

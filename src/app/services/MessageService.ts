@@ -7,7 +7,6 @@ import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
 import { messageQueue } from "../queues/messageQueue";
-import AgentService from "./AgentService";
 
 type MediaMessage = {
   mediaType: MediaType;
@@ -181,7 +180,7 @@ export default {
       };
 
       let response;
-      // media message
+      // todo media message
       if (data.mediaType) {
         response = await message.sendMedia(channel.name, {
           media: data.mediaUrl,
@@ -222,27 +221,6 @@ export default {
       messageToStore.id = response.key.id;
 
       await this.store(messageToStore);
-      if (ticket.useAI && data.content) {
-        const payload = {
-          message: data.content,
-          session_id: `ticket_${ticket.id}`,
-          user_id: `user_${ticket.UserId}`,
-        };
-
-        const agent = await AgentService.index();
-        const agentId = agent[0].id;
-
-        await messageQueue.add(
-          "process-message",
-          { agentId, payload },
-          {
-            backoff: 5000,
-            removeOnComplete: true,
-          },
-        );
-
-        await this.addMessageToQueue(agent[0].id, payload);
-      }
     } catch (error) {
       console.log(error);
       throw new HttpException("Falha ao enviar mensagem", 500);
