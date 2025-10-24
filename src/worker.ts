@@ -1,4 +1,3 @@
+import "./app/jobs/messageJob";
 
-import './app/jobs/messageJob';
-
-console.log('Worker process started');
+console.log("Worker process started");

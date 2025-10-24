@@ -1,12 +1,12 @@
+import { Queue } from "bullmq";
+import IORedis from "ioredis";
+import dotenv from "dotenv";
 
-// @ts-ignore
-import { Queue } from 'bullmq';
-// @ts-ignore
-import IORedis from 'ioredis';
+dotenv.config();
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const connection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
 
-export const messageQueue = new Queue('MessageQueue', { connection });
+export const messageQueue = new Queue("MessageQueue", { connection });

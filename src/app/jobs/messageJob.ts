@@ -1,35 +1,30 @@
+import { Worker, Job } from "bullmq";
+import IORedis from "ioredis";
+import Agent from "../integrations/agno/Agent";
+import dotenv from "dotenv";
 
-// @ts-ignore
-import { Worker, Job } from 'bullmq';
-// @ts-ignore
-import IORedis from 'ioredis';
-import Agent from '../integrations/agno/Agent';
+dotenv.config();
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const connection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
 
 const messageWorker = new Worker(
-  'MessageQueue',
+  "MessageQueue",
   async (job: Job) => {
     const { agentId, payload } = job.data;
     console.log(`Processing message for agent ${agentId}`, payload);
-    try {
-      await Agent.useAgent(agentId, payload);
-    } catch (error) {
-      console.error('Error processing message:', error);
-      throw error;
-    }
+    await Agent.useAgent(agentId, payload);
   },
-  { connection }
+  { connection },
 );
 
-messageWorker.on('completed', job => {
+messageWorker.on("completed", (job: Job) => {
   console.log(`Job ${job.id} has completed!`);
 });
 
-messageWorker.on('failed', (job, err) => {
+messageWorker.on("failed", (job: Job, err) => {
   if (job) {
     console.log(`Job ${job.id} has failed with ${err.message}`);
   } else {

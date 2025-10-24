@@ -10,7 +10,7 @@ type AgentQuery = {
 };
 
 export default {
-  async index(queryParams: AgentQuery): Promise<Agent[]> {
+  async index(queryParams: AgentQuery = {}): Promise<Agent[]> {
     const where: Prisma.AgentWhereInput = {};
 
     if (queryParams.name) {

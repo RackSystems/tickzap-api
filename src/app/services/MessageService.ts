@@ -6,10 +6,8 @@ import HttpException from "../exceptions/HttpException";
 import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
-// @ts-ignore
-import {response} from "express";
-import {Ticket} from "../interfaces/TicketInterface";
-import {messageQueue} from "../queues/messageQueue";
+import { messageQueue } from "../queues/messageQueue";
+import AgentService from "./AgentService";
 
 type MediaMessage = {
   mediaType: MediaType;
@@ -227,12 +225,26 @@ export default {
       if (ticket.useAI && data.content) {
         const payload = {
           message: data.content,
-          session_id: ticket.id,
-          user_id: ticket.UserId,
-        }; //dados necessario para a rota useAgent
-        this.addMessageToQueue(ticket.agentId, payload);
+          session_id: `ticket_${ticket.id}`,
+          user_id: `user_${ticket.UserId}`,
+        };
+
+        const agent = await AgentService.index();
+        const agentId = agent[0].id;
+
+        await messageQueue.add(
+          "process-message",
+          { agentId, payload },
+          {
+            backoff: 5000,
+            removeOnComplete: true,
+          },
+        );
+
+        await this.addMessageToQueue(agent[0].id, payload);
       }
     } catch (error) {
+      console.log(error);
       throw new HttpException("Falha ao enviar mensagem", 500);
     }
   },
@@ -240,20 +252,22 @@ export default {
   async addMessageToQueue(agentId: string, payload: any) {
     try {
       if (!agentId || !payload) {
-        console.error('Missing agentId or payload')
+        console.error("Missing agentId or payload");
         new HttpException("Missing agentId or payload", 404);
       }
 
-      await messageQueue.add('process-message', {agentId, payload}, {
-        backoff: 5000,
-        removeOnComplete: true,
-      });
+      await messageQueue.add(
+        "process-message",
+        { agentId, payload },
+        {
+          backoff: 5000,
+          removeOnComplete: true,
+        },
+      );
       console.log(`📩 Mensagem enfileirada para agent ${agentId}`);
-
-      // res.status(200).json({ status: 'queued' });
     } catch (error) {
-      console.error('❌ Erro ao adicionar job:', error);
-      new HttpException(`Erro ao adicionar job: ${error}`, 500)
+      console.error("❌ Erro ao adicionar job:", error);
+      new HttpException(`Erro ao adicionar job: ${error}`, 500);
     }
-  }
+  },
 };
