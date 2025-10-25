@@ -8,6 +8,8 @@ import Message from "../integrations/evolution/Message";
 import StorageService from "./StorageService";
 import AgentService from "./AgentService";
 import { messageQueue } from "../queues/messageQueue";
+import {broadcastToChannel, broadcastToWatchingTicket} from "../../websocket";
+import {truncateWithoutCuttingWord} from "../../helpers/TicketHelper";
 
 const messageTypeToMediaTypeMap: Record<string, MediaType> = {
   imageMessage: "IMAGE",
@@ -95,7 +97,7 @@ export default {
         content = message.conversation || (message.extendedTextMessage && message.extendedTextMessage.text) || "";
       }
 
-      await MessageService.store({
+      const createdMessage = await MessageService.store({
         id: key.id,
         ticketId: ticket.id,
         contactId: contact.id,
@@ -104,6 +106,21 @@ export default {
         mediaType: mediaType,
         type: MessageType.CLIENT,
         sentAt: new Date(messageTimestamp * 1000),
+      });
+
+      //notify frontend for new contact message
+      await broadcastToWatchingTicket(ticket.id, {
+        type: 'newMessage',
+        message: createdMessage,
+        from: 'client',
+      });
+
+      await broadcastToChannel(channel.id, {
+        type: 'ticketUpdated',
+        ticketId: ticket.id,
+        lastMessage: truncateWithoutCuttingWord(createdMessage.content),
+        updatedAt: new Date().toISOString(),
+        hasNewMessage: true
       });
 
       console.log(`Message created successfully: ${key.id}`);

@@ -7,6 +7,8 @@ import ContactService from "./ContactService";
 import TicketService from "./TicketService";
 import ChannelService from "./ChannelService";
 import { messageQueue } from "../queues/messageQueue";
+import {broadcastToChannel, broadcastToWatchingTicket} from "../../websocket";
+import {truncateWithoutCuttingWord} from "../../helpers/TicketHelper";
 
 type MediaMessage = {
   mediaType: MediaType;
@@ -220,7 +222,23 @@ export default {
       // @ts-ignore
       messageToStore.id = response.key.id;
 
-      await this.store(messageToStore);
+      const storedMessage = await this.store(messageToStore);
+
+      //notify frontend for new user answer
+      await broadcastToWatchingTicket(ticket.id, {
+        type: 'newMessage',
+        message: storedMessage,
+        from: 'user',
+      });
+
+      await broadcastToChannel(channel.id, {
+        type: 'ticketUpdated',
+        ticketId: ticket.id,
+        lastMessage: truncateWithoutCuttingWord(storedMessage.content),
+        updatedAt: new Date().toISOString(),
+        hasNewMessage: false,
+      });
+
     } catch (error) {
       console.log(error);
       throw new HttpException("Falha ao enviar mensagem", 500);
