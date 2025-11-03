@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { Server } from 'http';
+import { Server, IncomingMessage } from 'http';
 import IORedis from 'ioredis';
+import cookie from 'cookie';
 
 const redis = new IORedis(process.env.REDIS_URL);
 
@@ -16,8 +17,17 @@ const initWebSocket = (
 ) => {
     const wss = new WebSocketServer({ server, path });
 
-    wss.on('connection', (ws: WebSocket) => {
-        const clientId = Math.random().toString(36).substring(2, 15);
+    wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+        const cookies = cookie.parse(req.headers.cookie || '');
+        const userId = cookies.userId;
+
+        if (!userId) {
+            console.log(`Connection rejected from ${req.socket.remoteAddress}: missing userId cookie.`);
+            ws.close(4001, 'Unauthorized');
+            return;
+        }
+
+        const clientId = userId;
         clientsMap.set(clientId, ws);
         console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Client ${clientId} connected`);
 
