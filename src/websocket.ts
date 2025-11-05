@@ -19,7 +19,7 @@ const initWebSocket = (
 
     wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
         const cookies = cookie.parse(req.headers.cookie || '');
-        const userId = cookies.userId;
+        const userId = cookies.userId ?? "cmh5722l30000pu0r62v3ptus"; //mockar id do user pra testar mais rapido
 
         if (!userId) {
             console.log(`Connection rejected from ${req.socket.remoteAddress}: missing userId cookie.`);
@@ -27,18 +27,20 @@ const initWebSocket = (
             return;
         }
 
-        const clientId = userId;
+        const clientId = userId ;
         clientsMap.set(clientId, ws);
         console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Client ${clientId} connected`);
 
         // send id for client
-        ws.send(JSON.stringify({ type: 'connection', clientId, socketType: type }));
+        ws.send(JSON.stringify({ type: 'connection', clientId, socketType: type })); //chegou aqui
 
         ws.on('close', async () => {
             //clear and disconnect
             if (type === 'ticket') {
                 await redis.del(`client:${clientId}:watching`);
-            } else {
+            }
+
+            if (type === 'global') {
                 const channelId = await redis.get(`client:${clientId}:channel`);
                 if (channelId) {
                     await redis.srem(`channel:${channelId}:global`, clientId);
@@ -59,9 +61,9 @@ const initWebSocket = (
         ws.on('message', async (data) => {
             try {
                 const message = JSON.parse(data.toString());
-                console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Message from ${clientId}:`, message);
+                // console.log(`${type === 'ticket' ? 'Ticket' : 'Global'} Message from ${clientId}:`, message);
 
-                if (type === 'ticket') {
+                // if (type === 'ticket') {
                     // ticket messages - send by frontend
                     if (message.type === 'watchTicket') {
                         const { ticketId } = message;
@@ -73,7 +75,7 @@ const initWebSocket = (
                         await redis.del(`client:${clientId}:watching`);
                         console.log(`Client ${clientId} stopped watching ticket`);
                     }
-                } else {
+                // } else {
                     // global messages - send by frontend
                     if (message.type === 'joinChannel') {
                         const { channelId } = message;
@@ -88,7 +90,7 @@ const initWebSocket = (
                         await redis.del(`client:${clientId}:channel`);
                         console.log(`Client ${clientId} left global channel ${channelId}`);
                     }
-                }
+                // }
 
             } catch (error) {
                 console.error(`Error parsing ${type} message:`, error);
@@ -101,7 +103,7 @@ const initWebSocket = (
 
 export const initTicketWebSocket = (server: Server) => {
     return initWebSocket(server, '/ws-ticket', ticketClients, 'ticket');
-};
+}; //todo acho q nao vai usar
 
 export const initGlobalWebSocket = (server: Server) => {
     return initWebSocket(server, '/ws-global', globalClients, 'global');
@@ -172,7 +174,7 @@ export const broadcastToAllTickets = (message: object) => {
 
     console.log(`Broadcast to ${count} ticket clients`);
     return count;
-};
+}; //todo acho q nao vai usar
 
 export const broadcastToAllGlobals = (message: object) => {
     const serializedMessage = JSON.stringify(message);
@@ -187,13 +189,13 @@ export const broadcastToAllGlobals = (message: object) => {
 
     console.log(`Broadcast to ${count} global clients`);
     return count;
-};
+}; //todo acho q nao vai usar
 
 // helpers
 export const getConnectedTicketClients = (): string[] => {
     return Array.from(ticketClients.keys());
-};
+}; //todo acho q nao vai usar
 
 export const getConnectedGlobalClients = (): string[] => {
     return Array.from(globalClients.keys());
-};
+}; //todo acho q nao vai usar

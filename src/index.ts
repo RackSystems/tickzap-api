@@ -4,7 +4,7 @@ import routes from './routes/api';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import ErrorHandler from "./app/middlewares/ErrorHandler";
-import { initTicketWebSocket, initGlobalWebSocket } from './websocket';
+import { initGlobalWebSocket } from './websocket';
 
 dotenv.config();
 
@@ -27,6 +27,6 @@ const server =  app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
 
   //initialize websockets - global and by ticket
-  initTicketWebSocket(server);
+  // initTicketWebSocket(server);
   initGlobalWebSocket(server);
 });
